@@ -1,0 +1,34 @@
+# Configuration des variables d'environnement pour Airhost
+
+## Frontend (.env dans /frontend/)
+VITE_SUPABASE_URL=YOUR_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+VITE_FIREBASE_API_KEY=YOUR_FIREBASE_API_KEY
+VITE_FIREBASE_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID
+VITE_FIREBASE_MESSAGING_SENDER_ID=YOUR_FIREBASE_MESSAGING_SENDER_ID
+VITE_FIREBASE_APP_ID=YOUR_FIREBASE_APP_ID
+
+## Supabase Edge Functions
+# Variables à configurer dans l'interface Supabase pour chaque fonction
+OPENAI_API_KEY=YOUR_OPENAI_API_KEY
+SUPABASE_URL=YOUR_SUPABASE_URL
+SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_SERVICE_ROLE_KEY
+WHATSAPP_VERIFY_TOKEN=YOUR_WHATSAPP_VERIFY_TOKEN
+FIREBASE_API_KEY=YOUR_FIREBASE_API_KEY
+FCM_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID
+
+## Configuration WhatsApp (à renseigner dans l'interface utilisateur)
+# Phone Number ID : obtenu depuis Meta Business
+# WhatsApp Access Token : obtenu depuis Meta Business
+
+## Configuration Firebase (pour les notifications push)
+# Créer un projet Firebase
+# Activer Cloud Messaging
+# Télécharger le fichier de configuration
+# Configurer les clés dans les variables d'environnement
+
+## Instructions de déploiement
+# 1. Copier ce fichier vers .env dans le dossier frontend
+# 2. Remplacer toutes les valeurs YOUR_* par les vraies valeurs
+# 3. Configurer les variables Supabase dans l'interface web
+# 4. Ne jamais commiter les vraies valeurs dans Git
