@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { Message, MessageService } from '../services/chat/message.service';
-import { useMessageSender, saveMessageLocally } from './useMessageSender';
+import { useMessageSender } from './useMessageSender';
 import { NotificationService } from '../services/notification/notification.service';
 
 // Préfixe pour les logs liés à ce hook
