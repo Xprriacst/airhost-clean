@@ -223,53 +223,29 @@ export function useMessagesRealtime(conversationId: string, apartmentId?: string
           
           console.log(`${DEBUG_PREFIX} [${timestamp}] État mis à jour: ${updatedMessages.length} messages`);
           
-          // Sauvegarder le message localement
-          try {
-            // Utiliser la fonction importée en haut du fichier
-            saveMessageLocally(newMessage);
-            console.log(`${DEBUG_PREFIX} [${timestamp}] Message également sauvegardé localement via Realtime`);
-            
-            // Déclencher une notification UNIQUEMENT pour les messages entrants
-            // et seulement si le message n'a pas été envoyé par l'utilisateur actuel
-            if (newMessage.direction === 'inbound') {
-              console.log(`${DEBUG_PREFIX} [${timestamp}] Message entrant détecté, déclenchement de la notification`);
-              // Ajouter un attribut spécial pour le suivi des notifications
-              const messageWithFlag = {
-                ...newMessage,
-                _notificationTracking: {
-                  source: 'useMessagesRealtime',
-                  timestamp: new Date().toISOString()
-                }
-              };
-              NotificationService.notifyNewMessage(messageWithFlag);
-            } else {
-              console.log(`${DEBUG_PREFIX} [${timestamp}] Message sortant, pas de notification`);
-            }
-          } catch (error) {
-            console.error(`${DEBUG_PREFIX} [${timestamp}] Erreur lors de la sauvegarde locale du message reçu:`, error);
+          // Déclencher une notification UNIQUEMENT pour les messages entrants
+          // et seulement si le message n'a pas été envoyé par l'utilisateur actuel
+          if (newMessage.direction === 'inbound') {
+            console.log(`${DEBUG_PREFIX} [${timestamp}] Message entrant détecté, déclenchement de la notification`);
+            // Ajouter un attribut spécial pour le suivi des notifications
+            const messageWithFlag = {
+              ...newMessage,
+              _notificationTracking: {
+                source: 'useMessagesRealtime',
+                timestamp: new Date().toISOString()
+              }
+            };
+            NotificationService.notifyNewMessage(messageWithFlag);
+          } else {
+            console.log(`${DEBUG_PREFIX} [${timestamp}] Message sortant, pas de notification`);
           }
           
           return updatedMessages;
         });
         
-        // Force un rafraîchissement après réception d'un message Realtime pour s'assurer que tout est synchronisé
-        // Délai plus court pour mobile pour assurer une synchronisation plus rapide
-        const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const refreshDelay = isMobileDevice ? 300 : 1000; // Plus rapide sur mobile
-        
-        setTimeout(() => {
-          console.log(`${DEBUG_PREFIX} [${timestamp}] Rafraîchissement après réception d'un message Realtime (${isMobileDevice ? 'Mobile' : 'Desktop'})`);
-          // Forcer un rafraîchissement complet avec priorité réseau pour les appareils mobiles
-          loadMessages(false, true); // Ne pas montrer l'icône de chargement
-          
-          // Sur mobile, forcez un second rafraîchissement pour plus de fiabilité
-          if (isMobileDevice) {
-            setTimeout(() => {
-              console.log(`${DEBUG_PREFIX} [${timestamp}] Second rafraîchissement pour mobile`);
-              loadMessages(false, true);
-            }, 1000);
-          }
-        }, refreshDelay);
+        // Pas besoin de forcer un rafraîchissement après réception d'un message Realtime
+        // car le message a déjà été ajouté à l'état via la souscription
+        console.log(`${DEBUG_PREFIX} [${timestamp}] Message traité via Realtime, pas de rafraîchissement nécessaire`);
       } else {
         console.log(`${DEBUG_PREFIX} [${timestamp}] Message ignoré car il n'appartient pas à la conversation active: ${payload.new.conversation_id} !== ${conversationId}`);
       }

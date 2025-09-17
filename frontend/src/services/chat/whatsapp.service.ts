@@ -40,13 +40,13 @@ export class WhatsAppService {
     }
   }
 
-  static async saveConfig(config: Partial<WhatsAppConfig>): Promise<boolean> {
+  static async saveConfig(config: Partial<WhatsAppConfig>, hostId?: string): Promise<boolean> {
     try {
-      console.log("[WhatsAppService] v2.0.0 - Tentative de sauvegarde de la configuration WhatsApp via API Supabase directe:", config);
+      console.log("[WhatsAppService] v1.0.0 - Sauvegarde de la configuration WhatsApp:", config);
       
-      // Préparer les données avec updated_at
       const dataToSave = {
         ...config,
+        host_id: hostId || '83b3710d-f3fe-4031-bcf4-16b07f565f9c', // Use provided hostId or default
         updated_at: new Date().toISOString()
       };
       
@@ -60,7 +60,7 @@ export class WhatsAppService {
         return false;
       }
       
-      console.log("Configuration WhatsApp sauvegardée via API Supabase avec succès");
+      console.log("Configuration WhatsApp sauvegardée avec succès");
       return true;
     } catch (err) {
       console.error("Exception lors de la sauvegarde de la configuration WhatsApp:", err);

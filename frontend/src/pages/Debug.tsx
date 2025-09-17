@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Button, Container, Grid, Paper, TextField, Typography, CircularProgress, Divider, Tabs, Tab } from '@mui/material';
 import NotificationTest from '../components/NotificationTest';
+import LodgifyTestPanel from '../components/Chat/LodgifyTestPanel';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -92,6 +93,7 @@ const DebugPage: React.FC = () => {
         <Tabs value={tabValue} onChange={handleTabChange} aria-label="debug tabs">
           <Tab label="API Tests" {...a11yProps(0)} />
           <Tab label="Notifications Tests" {...a11yProps(1)} />
+          <Tab label="Lodgify Tests" {...a11yProps(2)} />
         </Tabs>
       </Box>
       
@@ -221,6 +223,10 @@ const DebugPage: React.FC = () => {
       
       <TabPanel value={tabValue} index={1}>
         <NotificationTest />
+      </TabPanel>
+      
+      <TabPanel value={tabValue} index={2}>
+        <LodgifyTestPanel />
       </TabPanel>
     </Container>
   );

@@ -153,15 +153,16 @@ export default function Chat() {
           id,
           guest_name,
           guest_phone,
-          property:properties!inner(name, host_id, id),
+          property:properties(name, id),
           check_in_date,
           check_out_date,
           status,
           last_message,
           last_message_at,
-          unread_count
+          unread_count,
+          host_id
         `)
-        .eq('property.host_id', session.user.id)
+        .eq("host_id", session.user.id)
         .order('last_message_at', { ascending: false });
 
       if (error) throw error;

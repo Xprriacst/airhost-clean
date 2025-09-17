@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
   Box, 
   IconButton, 
@@ -20,6 +20,8 @@ import SignalCellularAltIcon from '@mui/icons-material/SignalCellularAlt';
 import SignalCellularConnectedNoInternet0BarIcon from '@mui/icons-material/SignalCellularConnectedNoInternet0Bar';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import PaletteIcon from '@mui/icons-material/Palette';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import HotelIcon from '@mui/icons-material/Hotel';
 
 import ChatMessages from './ChatMessages';
 import ChatInput from './ChatInput';
@@ -30,6 +32,8 @@ import { useMessageSender } from '../../hooks/useMessageSender';
 import { useTemplates } from '../../hooks/useTemplates';
 import { useEmergencyAnalysis } from '../../hooks/useEmergencyAnalysis';
 import { TemplateService, Template } from '../../services/chat/template.service';
+import { UnifiedMessagingService } from '../../services/unified-messaging.service';
+import { LodgifyService } from '../../services/chat/lodgify.service';
 
 // Préfixe pour les logs liés à ce composant
 const DEBUG_PREFIX = 'DEBUG_CHAT_WINDOW';
@@ -51,6 +55,8 @@ export default function ChatWindow({ conversationId, whatsappContactId, guestNam
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+  const [conversationChannel, setConversationChannel] = useState<'whatsapp' | 'lodgify' | null>(null);
+  const [lodgifyInfo, setLodgifyInfo] = useState<any>(null);
   
   // Utilisation des hooks personnalisés
   const { 
@@ -66,6 +72,74 @@ export default function ChatWindow({ conversationId, whatsappContactId, guestNam
   
   // Hook pour l'analyse d'urgence automatique
   useEmergencyAnalysis(conversationId);
+  
+  // Detect conversation channel on mount and when conversation changes
+  useEffect(() => {
+    const detectChannel = async () => {
+      if (conversationId) {
+        try {
+          console.log(`${DEBUG_PREFIX} Détection du canal pour conversation:`, conversationId);
+          
+          // Debug: Check if conversation is linked to Lodgify
+          const isLinked = await LodgifyService.isConversationLinkedToLodgify(conversationId);
+          console.log(`${DEBUG_PREFIX} Conversation liée à Lodgify:`, isLinked);
+          
+          const channel = await UnifiedMessagingService.detectConversationChannel(conversationId);
+          console.log(`${DEBUG_PREFIX} Canal détecté:`, channel);
+          setConversationChannel(channel);
+          
+          if (channel === 'lodgify') {
+            const info = await LodgifyService.getLodgifyBookingInfo(conversationId);
+            console.log(`${DEBUG_PREFIX} Info Lodgify:`, info);
+            setLodgifyInfo(info);
+          } else {
+            // Clear Lodgify info if not a Lodgify conversation
+            setLodgifyInfo(null);
+          }
+        } catch (error) {
+          console.error('Error detecting conversation channel:', error);
+          setConversationChannel('whatsapp'); // Default fallback
+          setLodgifyInfo(null);
+        }
+      }
+    };
+    
+    detectChannel();
+  }, [conversationId]);
+
+  // Listen for configuration changes and re-detect channel if needed
+  useEffect(() => {
+    const handleConfigChange = () => {
+      // Re-detect channel when configuration might have changed
+      if (conversationId) {
+        const detectChannel = async () => {
+          try {
+            const channel = await UnifiedMessagingService.detectConversationChannel(conversationId);
+            console.log(`${DEBUG_PREFIX} Canal re-détecté après changement de config:`, channel);
+            setConversationChannel(channel);
+            
+            if (channel === 'lodgify') {
+              const info = await LodgifyService.getLodgifyBookingInfo(conversationId);
+              setLodgifyInfo(info);
+            } else {
+              setLodgifyInfo(null);
+            }
+          } catch (error) {
+            console.error('Error re-detecting conversation channel:', error);
+          }
+        };
+        
+        detectChannel();
+      }
+    };
+
+    // Listen for custom events that indicate configuration changes
+    window.addEventListener('messaging-config-changed', handleConfigChange);
+    
+    return () => {
+      window.removeEventListener('messaging-config-changed', handleConfigChange);
+    };
+  }, [conversationId]);
   
   // Gestionnaire pour l'envoi de message
   const handleSendMessage = useCallback(async (messageToSend: string = messageInput) => {
@@ -213,6 +287,16 @@ export default function ChatWindow({ conversationId, whatsappContactId, guestNam
             variant="outlined"
             sx={{ ml: 2, height: 24 }}
           />
+          {conversationChannel && (
+            <Chip
+              size="small"
+              icon={conversationChannel === 'lodgify' ? <HotelIcon /> : <WhatsAppIcon />}
+              label={conversationChannel === 'lodgify' ? 'Lodgify' : 'WhatsApp'}
+              color={conversationChannel === 'lodgify' ? 'primary' : 'success'}
+              variant="filled"
+              sx={{ ml: 1, height: 24 }}
+            />
+          )}
         </Box>
         <Box>
           <IconButton 
@@ -264,6 +348,7 @@ export default function ChatWindow({ conversationId, whatsappContactId, guestNam
           onOpenAIModal={handleOpenAIModal}
           onOpenTemplates={handleTemplatesMenuOpen}
           disabled={sending}
+          sending={sending}
         />
         
         {sendError && (

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaHome, FaComments, FaExclamationTriangle, FaFlask, FaWhatsapp, FaSignOutAlt } from 'react-icons/fa';
+import { FaHome, FaComments, FaExclamationTriangle, FaFlask, FaWhatsapp, FaSignOutAlt, FaCog } from 'react-icons/fa';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'react-toastify';
 import './SideMenu.css';
@@ -107,6 +107,7 @@ const SideMenu: React.FC = () => {
     { path: '/properties', label: 'Appartements', icon: <FaHome /> },
     { path: '/emergency', label: 'Cas d\'urgence', icon: <FaExclamationTriangle /> },
     { path: '/sandbox', label: 'Chat Sandbox', icon: <FaFlask /> },
+    { path: '/settings', label: 'Paramètres', icon: <FaCog /> },
   ];
 
   const bottomMenuItems: MenuItem[] = [
