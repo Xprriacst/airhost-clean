@@ -18,8 +18,8 @@ console.log('Toutes les variables d\'environnement:');
 console.log(import.meta.env);
 
 // Définir des valeurs par défaut pour la production
-const defaultSupabaseUrl = 'YOUR_SUPABASE_URL';
-const defaultSupabaseAnonKey = 'YOUR_SUPABASE_KEY_HERE';
+const defaultSupabaseUrl = 'https://ndeydubfkutridvnzixc.supabase.co';
+const defaultSupabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kZXlkdWJma3V0cmlkdm56aXhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDg1MzI0NjcsImV4cCI6MjAyNDEwODQ2N30.VvVzBJLNfBjJGGnJVHOKqXGMKfqhNQjWZhZcPqKqKqY';
 
 // Déterminer les valeurs à utiliser selon l'environnement
 let supabaseUrl: string;

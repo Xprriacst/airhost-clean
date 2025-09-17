@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { MessageService, Message } from '../services/chat/message.service';
-import { WhatsAppService } from '../services/chat/whatsapp.service';
+import { UnifiedMessagingService } from '../services/unified-messaging.service';
 
 // Préfixe pour les logs liés à ce hook
 const DEBUG_PREFIX = 'DEBUG_USE_MESSAGE_SENDER';
@@ -244,29 +244,27 @@ export function useMessageSender(): UseMessageSenderResult {
       
       console.log(`${DEBUG_PREFIX} Message inséré en base de données avec ID: ${newMessage.id}`);
       
-      // Sauvegarder le message localement pour garantir qu'il soit toujours affiché
-      console.log(`${DEBUG_PREFIX} Sauvegarde locale du message:`, newMessage.id);
-      saveMessageLocally(newMessage);
+      // Ne pas sauvegarder localement immédiatement pour éviter les doublons
+      // Le message apparaîtra via la souscription realtime ou le polling
+      console.log(`${DEBUG_PREFIX} Message envoyé, il apparaîtra via realtime/polling`);
       
-      // Double vérification pour s'assurer que le message est bien sauvegardé
-      setTimeout(() => {
-        const localMsgs = getLocalMessagesForConversation(conversationId);
-        const isPresent = localMsgs.some((m: Message) => m.id === newMessage.id);
-        console.log(`${DEBUG_PREFIX} Vérification différée: le message ${newMessage.id} est ${isPresent ? 'présent' : 'ABSENT !'} dans le stockage local`);
-      }, 200);
+      // 2. Envoyer le message via le canal auto-détecté (Lodgify ou WhatsApp)
+      console.log(`${DEBUG_PREFIX} Envoi du message avec auto-détection du canal pour le contact ${contactId || 'non défini'}`);
       
-      // 2. Si un contactId est fourni, envoyer le message à WhatsApp
-      if (contactId) {
-        console.log(`${DEBUG_PREFIX} Envoi du message à WhatsApp pour le contact ${contactId}`);
+      try {
+        // Pour Lodgify, le contactId n'est pas nécessaire car le service utilise conversationId
+        // Pour WhatsApp, le contactId (numéro de téléphone) est requis
+        const result = await UnifiedMessagingService.sendMessage(contactId || '', content, conversationId);
         
-        try {
-          await WhatsAppService.sendMessage(contactId, content);
-          console.log(`${DEBUG_PREFIX} Message envoyé avec succès à WhatsApp`);
-        } catch (whatsappError) {
-          console.error(`${DEBUG_PREFIX} Erreur lors de l'envoi à WhatsApp:`, whatsappError);
-          // Ne pas bloquer le flux même si l'envoi à WhatsApp échoue
-          setError('Le message a été enregistré, mais l\'envoi WhatsApp a échoué');
+        if (result.success) {
+          console.log(`${DEBUG_PREFIX} Message envoyé avec succès via canal auto-détecté`);
+        } else {
+          throw new Error(result.error || 'Erreur inconnue lors de l\'envoi');
         }
+      } catch (messagingError) {
+        console.error(`${DEBUG_PREFIX} Erreur lors de l'envoi:`, messagingError);
+        // Ne pas bloquer le flux même si l'envoi échoue
+        setError(`Le message a été enregistré, mais l'envoi a échoué: ${messagingError?.message || messagingError}`);
       }
       
       return newMessage;

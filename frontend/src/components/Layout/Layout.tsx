@@ -151,11 +151,19 @@ const Layout = ({ children }: LayoutProps) => {
             <DialogContent dividers sx={{ p: 0 }}>
               <List>
                 <ListItem disablePadding>
-                  <ListItemButton onClick={openWhatsAppConfig}>
+                  <ListItemButton onClick={() => { navigate('/settings'); setMenuOpen(false); }}>
                     <ListItemIcon>
                       <SettingsIcon />
                     </ListItemIcon>
                     <ListItemText primary="Paramètres" />
+                  </ListItemButton>
+                </ListItem>
+                <ListItem disablePadding>
+                  <ListItemButton onClick={openWhatsAppConfig}>
+                    <ListItemIcon>
+                      <WhatsAppIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Configuration WhatsApp" />
                   </ListItemButton>
                 </ListItem>
                 <ListItem disablePadding>

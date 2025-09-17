@@ -30,12 +30,19 @@ CREATE POLICY "L'application peut créer des profils"
     FOR INSERT
     WITH CHECK (true);
 
--- Créer une fonction pour gérer la création automatique de profils
+-- Créer une fonction pour gérer la création automatique de profils et hosts
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
+    -- Créer le profil utilisateur
     INSERT INTO public.profiles (id, email, created_at, updated_at)
     VALUES (NEW.id, NEW.email, NOW(), NOW());
+    
+    -- Créer automatiquement l'enregistrement host
+    INSERT INTO public.hosts (id, email, created_at)
+    VALUES (NEW.id, NEW.email, NOW())
+    ON CONFLICT (id) DO NOTHING;
+    
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

@@ -9,10 +9,12 @@ import {
   Tab
 } from '@mui/material';
 import NotificationToggle from '../components/Notifications/NotificationToggle';
+import MessagingSetup from '../components/MessagingSetup/MessagingSetup';
 import SettingsIcon from '@mui/icons-material/Settings';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import SecurityIcon from '@mui/icons-material/Security';
+import ChatIcon from '@mui/icons-material/Chat';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -72,8 +74,9 @@ const Settings = () => {
               variant="fullWidth"
             >
               <Tab icon={<NotificationsIcon />} label="Notifications" {...a11yProps(0)} />
-              <Tab icon={<AccountCircleIcon />} label="Profil" {...a11yProps(1)} />
-              <Tab icon={<SecurityIcon />} label="Sécurité" {...a11yProps(2)} />
+              <Tab icon={<ChatIcon />} label="Messagerie" {...a11yProps(1)} />
+              <Tab icon={<AccountCircleIcon />} label="Profil" {...a11yProps(2)} />
+              <Tab icon={<SecurityIcon />} label="Sécurité" {...a11yProps(3)} />
             </Tabs>
           </Box>
           
@@ -103,13 +106,17 @@ const Settings = () => {
           </TabPanel>
           
           <TabPanel value={tabValue} index={1}>
+            <MessagingSetup />
+          </TabPanel>
+          
+          <TabPanel value={tabValue} index={2}>
             <Typography variant="h6">Paramètres du profil</Typography>
             <Typography variant="body2" color="text.secondary">
               Cette section sera bientôt disponible.
             </Typography>
           </TabPanel>
           
-          <TabPanel value={tabValue} index={2}>
+          <TabPanel value={tabValue} index={3}>
             <Typography variant="h6">Paramètres de sécurité</Typography>
             <Typography variant="body2" color="text.secondary">
               Cette section sera bientôt disponible.

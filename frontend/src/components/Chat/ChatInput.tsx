@@ -5,7 +5,8 @@ import {
   IconButton, 
   Tooltip,
   Paper,
-  Divider
+  Divider,
+  CircularProgress
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
@@ -16,20 +17,29 @@ interface ChatInputProps {
   onOpenAIModal: () => void;
   onOpenTemplates: (event: React.MouseEvent<HTMLElement>) => void;
   disabled?: boolean;
+  sending?: boolean;
 }
 
 export default function ChatInput({ 
   onSendMessage, 
   onOpenAIModal, 
   onOpenTemplates,
-  disabled 
+  disabled,
+  sending = false
 }: ChatInputProps) {
   const [newMessage, setNewMessage] = useState('');
+  const [isLocalSending, setIsLocalSending] = useState(false);
 
   const handleSend = async () => {
-    if (!newMessage.trim()) return;
-    await onSendMessage(newMessage);
-    setNewMessage('');
+    if (!newMessage.trim() || sending || isLocalSending) return;
+    
+    setIsLocalSending(true);
+    try {
+      await onSendMessage(newMessage);
+      setNewMessage('');
+    } finally {
+      setIsLocalSending(false);
+    }
   };
 
   const handleKeyPress = (event: React.KeyboardEvent) => {
@@ -121,17 +131,17 @@ export default function ChatInput({
           }}
         />
 
-        <Tooltip title="Envoyer">
+        <Tooltip title={sending || isLocalSending ? "Envoi en cours..." : "Envoyer"}>
           <span>
             <IconButton 
               onClick={handleSend}
-              disabled={disabled || !newMessage.trim()}
+              disabled={disabled || !newMessage.trim() || sending || isLocalSending}
               color="primary"
               sx={{
-                bgcolor: newMessage.trim() ? '#3b82f6' : 'transparent',
-                color: newMessage.trim() ? 'white' : 'rgba(0, 0, 0, 0.26)',
+                bgcolor: newMessage.trim() && !sending && !isLocalSending ? '#3b82f6' : 'transparent',
+                color: newMessage.trim() && !sending && !isLocalSending ? 'white' : 'rgba(0, 0, 0, 0.26)',
                 '&:hover': {
-                  bgcolor: newMessage.trim() ? '#2563eb' : 'transparent'
+                  bgcolor: newMessage.trim() && !sending && !isLocalSending ? '#2563eb' : 'transparent'
                 },
                 '&.Mui-disabled': {
                   bgcolor: 'transparent',
@@ -139,7 +149,11 @@ export default function ChatInput({
                 }
               }}
             >
-              <SendIcon />
+              {sending || isLocalSending ? (
+                <CircularProgress size={20} sx={{ color: 'rgba(0, 0, 0, 0.26)' }} />
+              ) : (
+                <SendIcon />
+              )}
             </IconButton>
           </span>
         </Tooltip>
