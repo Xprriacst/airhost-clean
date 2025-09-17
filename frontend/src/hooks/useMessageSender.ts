@@ -261,7 +261,7 @@ export function useMessageSender(): UseMessageSenderResult {
         } else {
           throw new Error(result.error || 'Erreur inconnue lors de l\'envoi');
         }
-      } catch (messagingError) {
+      } catch (messagingError: any) {
         console.error(`${DEBUG_PREFIX} Erreur lors de l'envoi:`, messagingError);
         // Ne pas bloquer le flux même si l'envoi échoue
         setError(`Le message a été enregistré, mais l'envoi a échoué: ${messagingError?.message || messagingError}`);

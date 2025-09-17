@@ -56,7 +56,7 @@ export default function ChatWindow({ conversationId, whatsappContactId, guestNam
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
   const [conversationChannel, setConversationChannel] = useState<'whatsapp' | 'lodgify' | null>(null);
-  const [lodgifyInfo, setLodgifyInfo] = useState<any>(null);
+  // const [lodgifyInfo, setLodgifyInfo] = useState<any>(null);
   
   // Utilisation des hooks personnalisés
   const { 
@@ -91,15 +91,16 @@ export default function ChatWindow({ conversationId, whatsappContactId, guestNam
           if (channel === 'lodgify') {
             const info = await LodgifyService.getLodgifyBookingInfo(conversationId);
             console.log(`${DEBUG_PREFIX} Info Lodgify:`, info);
-            setLodgifyInfo(info);
-          } else {
-            // Clear Lodgify info if not a Lodgify conversation
-            setLodgifyInfo(null);
-          }
+            // setLodgifyInfo(info);
+          } 
+          // else {
+          //   // Clear Lodgify info if not a Lodgify conversation
+          //   // setLodgifyInfo(null);
+          // }
         } catch (error) {
           console.error('Error detecting conversation channel:', error);
           setConversationChannel('whatsapp'); // Default fallback
-          setLodgifyInfo(null);
+          // setLodgifyInfo(null);
         }
       }
     };
@@ -119,11 +120,13 @@ export default function ChatWindow({ conversationId, whatsappContactId, guestNam
             setConversationChannel(channel);
             
             if (channel === 'lodgify') {
-              const info = await LodgifyService.getLodgifyBookingInfo(conversationId);
-              setLodgifyInfo(info);
-            } else {
-              setLodgifyInfo(null);
-            }
+              await LodgifyService.getLodgifyBookingInfo(conversationId);
+              // const info = await LodgifyService.getLodgifyBookingInfo(conversationId);
+              // setLodgifyInfo(info);
+            } 
+            // else {
+            //   // setLodgifyInfo(null);
+            // }
           } catch (error) {
             console.error('Error re-detecting conversation channel:', error);
           }
