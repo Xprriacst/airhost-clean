@@ -6,17 +6,17 @@ export class WhatsAppService {
 
   static async sendMessage(userId: string, to: string, message: string) {
     try {
-      // Récupérer les credentials de l'utilisateur
-      const { data: host } = await supabase
-        .from('hosts')
-        .select('phone_number_id, whatsapp_access_token')
-        .eq('id', userId)
+      // Récupérer les credentials de l'utilisateur depuis whatsapp_config
+      const { data: whatsappConfig } = await supabase
+        .from('whatsapp_config')
+        .select('phone_number_id, token')
+        .eq('host_id', userId)
         .single();
 
-      if (!host) throw new Error('Host not found');
+      if (!whatsappConfig) throw new Error('WhatsApp configuration not found for user');
 
       const response = await axios.post(
-        `${this.baseUrl}/${host.phone_number_id}/messages`,
+        `${this.baseUrl}/${whatsappConfig.phone_number_id}/messages`,
         {
           messaging_product: "whatsapp",
           recipient_type: "individual",
@@ -26,7 +26,7 @@ export class WhatsAppService {
         },
         {
           headers: {
-            'Authorization': `Bearer ${host.whatsapp_access_token}`,
+            'Authorization': `Bearer ${whatsappConfig.token}`,
             'Content-Type': 'application/json'
           }
         }
@@ -47,16 +47,16 @@ export class WhatsAppService {
     components: any[] = []
   ) {
     try {
-      const { data: host } = await supabase
-        .from('hosts')
-        .select('phone_number_id, whatsapp_access_token')
-        .eq('id', userId)
+      const { data: whatsappConfig } = await supabase
+        .from('whatsapp_config')
+        .select('phone_number_id, token')
+        .eq('host_id', userId)
         .single();
 
-      if (!host) throw new Error('Host not found');
+      if (!whatsappConfig) throw new Error('WhatsApp configuration not found for user');
 
       const response = await axios.post(
-        `${this.baseUrl}/${host.phone_number_id}/messages`,
+        `${this.baseUrl}/${whatsappConfig.phone_number_id}/messages`,
         {
           messaging_product: "whatsapp",
           recipient_type: "individual",
@@ -72,7 +72,7 @@ export class WhatsAppService {
         },
         {
           headers: {
-            'Authorization': `Bearer ${host.whatsapp_access_token}`,
+            'Authorization': `Bearer ${whatsappConfig.token}`,
             'Content-Type': 'application/json'
           }
         }

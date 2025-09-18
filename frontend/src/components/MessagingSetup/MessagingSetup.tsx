@@ -32,8 +32,7 @@ const MessagingSetup: React.FC<MessagingSetupProps> = ({ onConfigSaved }) => {
     token: ''
   });
   const [lodgifyConfig, setLodgifyConfig] = useState<Partial<LodgifyConfig>>({
-    api_key: '',
-    api_url: ''
+    api_key: ''
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -68,8 +67,7 @@ const MessagingSetup: React.FC<MessagingSetupProps> = ({ onConfigSaved }) => {
       const lodgifyData = await LodgifyService.getConfig();
       if (lodgifyData) {
         setLodgifyConfig({
-          api_key: lodgifyData.api_key,
-          api_url: lodgifyData.api_url || ''
+          api_key: lodgifyData.api_key
         });
       }
     } catch (error) {
@@ -273,14 +271,7 @@ const MessagingSetup: React.FC<MessagingSetupProps> = ({ onConfigSaved }) => {
             helperText="Clé API Lodgify"
           />
           
-          <TextField
-            fullWidth
-            label="API URL (optionnel)"
-            value={lodgifyConfig.api_url || ''}
-            onChange={(e) => setLodgifyConfig(prev => ({ ...prev, api_url: e.target.value }))}
-            margin="normal"
-            helperText="URL de l'API Lodgify (laissez vide pour utiliser l'URL par défaut)"
-          />
+         
         </Paper>
       )}
 
