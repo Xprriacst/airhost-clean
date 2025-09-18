@@ -25,14 +25,14 @@ export class WebhookController {
         return res.sendStatus(400);
       }
 
-      // Vérifier le token dans la base de données
-      const { data: host } = await supabase
-        .from('hosts')
-        .select('id')
-        .eq('verify_token', token)
+      // Vérifier le token dans la configuration WhatsApp
+      const { data: whatsappConfig } = await supabase
+        .from('whatsapp_config')
+        .select('host_id')
+        .eq('token', token)
         .single();
 
-      if (!host) {
+      if (!whatsappConfig) {
         return res.sendStatus(403);
       }
 
@@ -61,20 +61,20 @@ export class WebhookController {
       const { metadata, messages } = entry[0].changes[0].value;
       const phoneNumberId = metadata.phone_number_id;
 
-      // 3. Trouver l'hôte correspondant
-      const { data: host } = await supabase
-        .from('hosts')
-        .select('id')
+      // 3. Trouver l'hôte correspondant via la configuration WhatsApp
+      const { data: whatsappConfig } = await supabase
+        .from('whatsapp_config')
+        .select('host_id')
         .eq('phone_number_id', phoneNumberId)
         .single();
 
-      if (!host) {
+      if (!whatsappConfig) {
         return res.sendStatus(404);
       }
 
       // 4. Traiter chaque message
       for (const message of messages || []) {
-        await this.processMessage(host.id, message);
+        await this.processMessage(whatsappConfig.host_id, message);
       }
 
       // 5. Répondre rapidement (< 20 secondes)
@@ -90,8 +90,9 @@ export class WebhookController {
       // 1. Trouver ou créer la conversation
       const { data: conversation } = await supabase
         .from('conversations')
-        .select('id, property_id, created_at')
+        .select('id, property_id, host_id, unread_count, created_at')
         .eq('guest_number', message.from)
+        .eq('host_id', hostId)
         .single();
 
       // 2. Vérifier la fenêtre de 24h si c'est une conversation existante

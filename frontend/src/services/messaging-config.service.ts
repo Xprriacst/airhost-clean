@@ -13,16 +13,21 @@ export interface MessagingConfig {
 export class MessagingConfigService {
   static async getConfig(hostId?: string): Promise<MessagingConfig | null> {
     try {
-      console.log("[MessagingConfigService] Récupération de la configuration de messagerie...");
+      console.log("[MessagingConfigService] Récupération de la configuration de messagerie pour hostId:", hostId);
       
       // Get current user if hostId not provided
       if (!hostId) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          console.warn("No authenticated user found");
-          return { preferred_channel: 'whatsapp' };
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+          console.error("Error getting session:", sessionError);
+          return null;
+        }
+        if (!session || !session.user) {
+          console.error("No authenticated user found");
+          return null;
         }
         hostId = session.user.id;
+        console.log("[MessagingConfigService] Using authenticated user ID for getConfig:", hostId);
       }
       
       const { data, error } = await supabase
@@ -34,13 +39,20 @@ export class MessagingConfigService {
       if (error) {
         if (error.code === 'PGRST116') {
           // No config found, return default
-          console.log("No messaging config found for user, using default");
+          console.log("[MessagingConfigService] Aucune configuration trouvée, retour de la configuration par défaut");
           return { preferred_channel: 'whatsapp', host_id: hostId };
         }
         console.error("Erreur lors de la récupération de la configuration de messagerie:", error);
+        console.error("Error details:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         return null;
       }
       
+      console.log("[MessagingConfigService] Configuration récupérée:", data);
       return data as MessagingConfig;
     } catch (err) {
       console.error("Exception lors de la récupération de la configuration de messagerie:", err);
@@ -54,12 +66,17 @@ export class MessagingConfigService {
       
       // Get current user if hostId not provided
       if (!hostId) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+          console.error("Error getting session:", sessionError);
+          return false;
+        }
+        if (!session || !session.user) {
           console.error("No authenticated user found");
           return false;
         }
         hostId = session.user.id;
+        console.log("[MessagingConfigService] Using authenticated user ID:", hostId);
       }
       
       const dataToSave = {
@@ -68,24 +85,32 @@ export class MessagingConfigService {
         updated_at: new Date().toISOString()
       };
       
-      const { error } = await supabase
-        .from('messaging_config')
-        .upsert(dataToSave, {
-          onConflict: 'host_id'
-        });
+      console.log("[MessagingConfigService] Data to save:", dataToSave);
+      
+      // Use upsert with proper conflict resolution
+       const { data, error } = await supabase
+         .from('messaging_config')
+         .upsert(dataToSave,{ onConflict: 'host_id' })
+         .select();
       
       if (error) {
         console.error("Erreur lors de la sauvegarde de la configuration de messagerie:", error);
-        return false;
-      }
-      
-      console.log("Configuration de messagerie sauvegardée avec succès");
-      return true;
-    } catch (err) {
-      console.error("Exception lors de la sauvegarde de la configuration de messagerie:", err);
-      return false;
-    }
-  }
+        console.error("Error details:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+         return false;
+       }
+
+       console.log("[MessagingConfigService] Configuration de messagerie sauvegardée avec succès:", data);
+       return true;
+     } catch (err) {
+       console.error("Exception lors de la sauvegarde de la configuration de messagerie:", err);
+       return false;
+     }
+   }
 
   static async getPreferredChannel(hostId?: string): Promise<MessagingChannel> {
     const config = await this.getConfig(hostId);

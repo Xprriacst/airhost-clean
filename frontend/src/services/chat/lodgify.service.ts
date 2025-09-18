@@ -25,9 +25,16 @@ export class LodgifyService {
     try {
       console.log("[LodgifyService] v1.0.0 - Récupération de la configuration Lodgify...");
       
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) {
+        console.error("Utilisateur non authentifié");
+        return null;
+      }
+      
       const { data, error } = await supabase
         .from('lodgify_config')
         .select('*')
+        .eq('host_id', user.data.user.id)
         .order('updated_at', { ascending: false })
         .limit(1);
       
@@ -54,9 +61,15 @@ export class LodgifyService {
     try {
       console.log("[LodgifyService] v1.0.0 - Sauvegarde de la configuration Lodgify:", config);
       
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) {
+        console.error("Utilisateur non authentifié");
+        return false;
+      }
+      
       const dataToSave = {
         ...config,
-        host_id: hostId || '83b3710d-f3fe-4031-bcf4-16b07f565f9c', // Use provided hostId or default
+        host_id: hostId || user.data.user.id, // Use provided hostId or authenticated user's ID
         updated_at: new Date().toISOString()
       };
 
