@@ -147,6 +147,56 @@ export class LodgifyService {
   }
 
   /**
+   * Fetch properties from Lodgify API using user's API key
+   */
+  static async fetchLodgifyProperties(): Promise<{ success: boolean; properties?: any[]; error?: string }> {
+    try {
+      console.log("[LodgifyService] Fetching properties from Lodgify API...");
+      
+      // Get user's Lodgify configuration
+      const config = await this.getConfig();
+      if (!config || !config.api_key) {
+        return {
+          success: false,
+          error: 'Configuration Lodgify non trouvée ou clé API manquante'
+        };
+      }
+
+      // Make request to Lodgify API
+      const response = await fetch('https://api.lodgify.com/v1/properties', {
+        method: 'GET',
+        headers: {
+          'X-ApiKey': config.api_key,
+          'accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Lodgify API error:', errorText);
+        return {
+          success: false,
+          error: `Erreur API Lodgify: ${response.status} - ${errorText}`
+        };
+      }
+
+      const properties = await response.json();
+      console.log('Properties fetched from Lodgify:', properties);
+
+      return {
+        success: true,
+        properties: properties || []
+      };
+    } catch (error) {
+      console.error('Error fetching Lodgify properties:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Erreur inconnue'
+      };
+    }
+  }
+
+  /**
    * Get Lodgify booking information for a conversation
    */
   static async getLodgifyBookingInfo(conversationId: string) {

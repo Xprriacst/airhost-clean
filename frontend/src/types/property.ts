@@ -24,6 +24,7 @@ export interface Property {
   address: string;
   description: string;
   ai_instructions: string;
+  lodgify_property_id?: number;
   amenities: Amenity[];
   rules: Rule[];
   faq: FAQ[];

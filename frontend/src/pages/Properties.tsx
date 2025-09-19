@@ -17,12 +17,18 @@ import {
   AccordionSummary,
   AccordionDetails,
   useMediaQuery,
-  useTheme
+  useTheme,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormHelperText
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
+import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, ExpandMore as ExpandMoreIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { Property } from '../types/property';
 import { fetchProperties, createProperty, updateProperty, deleteProperty } from '../services/property.service';
+import { LodgifyService } from '../services/chat/lodgify.service';
 import Layout from '../components/Layout/Layout';
 
 const Properties: React.FC = () => {
@@ -38,6 +44,12 @@ const Properties: React.FC = () => {
   const [address, setAddress] = useState('');
   const [description, setDescription] = useState('');
   const [aiInstructions, setAiInstructions] = useState('');
+  const [lodgifyPropertyId, setLodgifyPropertyId] = useState<number | undefined>();
+  
+  // Lodgify properties states
+  const [lodgifyProperties, setLodgifyProperties] = useState<any[]>([]);
+  const [loadingLodgifyProperties, setLoadingLodgifyProperties] = useState(false);
+  const [lodgifyError, setLodgifyError] = useState<string | null>(null);
 
   // Default AI instructions template
   const defaultAiInstructions = `Tu es un assistant virtuel qui gère les communications avec les invités de l'appartement.
@@ -71,6 +83,29 @@ Instructions pour les réponses :
     }
   };
 
+  const loadLodgifyProperties = async () => {
+    try {
+      setLoadingLodgifyProperties(true);
+      setLodgifyError(null);
+      
+      const result = await LodgifyService.fetchLodgifyProperties();
+      
+      if (result.success && result.properties) {
+        setLodgifyProperties(result.properties);
+        console.log('Lodgify properties loaded:', result.properties);
+      } else {
+        setLodgifyError(result.error || 'Erreur lors du chargement des propriétés Lodgify');
+        setLodgifyProperties([]);
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des propriétés Lodgify:', error);
+      setLodgifyError('Erreur lors du chargement des propriétés Lodgify');
+      setLodgifyProperties([]);
+    } finally {
+      setLoadingLodgifyProperties(false);
+    }
+  };
+
   useEffect(() => {
     loadProperties();
   }, []);
@@ -82,6 +117,7 @@ Instructions pour les réponses :
       setAddress(property.address);
       setDescription(property.description || '');
       setAiInstructions(property.ai_instructions || '');
+      setLodgifyPropertyId(property.lodgify_property_id);
       setIsEditing(true);
     } else {
       setCurrentProperty(null);
@@ -89,9 +125,12 @@ Instructions pour les réponses :
       setAddress('');
       setDescription('');
       setAiInstructions(defaultAiInstructions);
+      setLodgifyPropertyId(undefined);
       setIsEditing(false);
     }
     setDialogOpen(true);
+    // Load Lodgify properties when dialog opens
+    loadLodgifyProperties();
   };
 
   const handleCloseDialog = () => {
@@ -121,6 +160,7 @@ Instructions pour les réponses :
           address,
           description,
           ai_instructions: aiInstructions,
+          lodgify_property_id: lodgifyPropertyId,
         });
         
         setProperties(properties.map(p => p.id === updatedProperty.id ? updatedProperty : p));
@@ -132,6 +172,7 @@ Instructions pour les réponses :
           address,
           description,
           ai_instructions: aiInstructions,
+          lodgify_property_id: lodgifyPropertyId,
           amenities: [],
           rules: [],
           faq: []
@@ -210,6 +251,7 @@ Instructions pour les réponses :
                   <Typography variant="h5" component="h2" gutterBottom>
                     {property.name}
                   </Typography>
+                  
                   <Typography color="textSecondary" gutterBottom>
                     {property.address}
                   </Typography>
@@ -275,6 +317,46 @@ Instructions pour les réponses :
               placeholder="Adresse complète de l'appartement"
               required
             />
+            <FormControl fullWidth variant="outlined">
+              <InputLabel id="lodgify-property-select-label">Propriété Lodgify</InputLabel>
+              <Select
+                labelId="lodgify-property-select-label"
+                value={lodgifyPropertyId || ''}
+                onChange={(e) => setLodgifyPropertyId(e.target.value ? parseInt(e.target.value as string) : undefined)}
+                label="Propriété Lodgify"
+                disabled={loadingLodgifyProperties}
+                endAdornment={
+                  <Button
+                    size="small"
+                    onClick={loadLodgifyProperties}
+                    disabled={loadingLodgifyProperties}
+                    sx={{ mr: 1 }}
+                  >
+                    <RefreshIcon fontSize="small" />
+                  </Button>
+                }
+              >
+                {lodgifyProperties && lodgifyProperties.length > 0 ? (
+                  lodgifyProperties.map((property) => (
+                    <MenuItem key={property.id} value={property.id}>
+                      {property.name} (ID: {property.id})
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem value="" disabled>
+                    <em>Aucune propriété disponible</em>
+                  </MenuItem>
+                )}
+              </Select>
+              <FormHelperText>
+                {loadingLodgifyProperties 
+                  ? 'Chargement des propriétés Lodgify...' 
+                  : lodgifyError 
+                    ? lodgifyError
+                    : 'Sélectionnez une propriété depuis votre compte Lodgify pour la synchronisation'
+                }
+              </FormHelperText>
+            </FormControl>
             <TextField
               label="Description"
               variant="outlined"
