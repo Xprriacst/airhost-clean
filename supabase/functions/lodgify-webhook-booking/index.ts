@@ -21,7 +21,7 @@ async function verifyWebhookSignature(body, signature, secret) {
     ]);
     const hashBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(body));
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map((b)=>b.toString(16).padStart(2, '0')).join('');
+    const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
     // console.log('Expected signature:', cleanSignature);
     // console.log('Computed signature:', hashHex);
     // Compare ignoring case
@@ -34,72 +34,60 @@ async function verifyWebhookSignature(body, signature, secret) {
 // Get webhook secret for specific host
 async function getWebhookSecretForHost(hostId) {
   try {
-    const { data: config } = await supabase
-      .from('lodgify_config')
-      .select('booking_webhook_secret')
-      .eq('host_id', hostId)
-      .single();
-    
+    const { data: config } = await supabase.from('lodgify_config').select('booking_webhook_secret').eq('host_id', hostId).single();
     return config?.booking_webhook_secret || null;
   } catch (error) {
     console.error('Error fetching webhook secret for host:', hostId, error);
     return null;
   }
 }
-
 // Verify webhook signature for specific host
 async function verifyWebhookForHost(body, signature, hostId) {
   const secret = await getWebhookSecretForHost(hostId);
-  
   if (!secret) {
     console.error('No webhook secret found for host:', hostId);
     return false;
   }
-  
   const isValid = await verifyWebhookSignature(body, signature, secret);
   if (isValid) {
     console.log('Webhook signature verified for host:', hostId);
     return true;
   }
-  
   console.error('Invalid webhook signature for host:', hostId);
   return false;
 }
-serve(async (req)=>{
+serve(async (req) => {
   try {
     if (req.method !== 'POST') {
       return new Response('Method not allowed', {
         status: 405
       });
     }
-    
     // Extract host_id from query parameters
     const url = new URL(req.url);
     const hostId = url.searchParams.get('host_id');
-    
     if (!hostId) {
       console.error('Missing host_id parameter in webhook URL');
       return new Response('Bad Request - Missing host_id parameter', {
         status: 400
       });
     }
-    
     const body = await req.text();
     // console.log("body", body);
     const parsedBody = JSON.parse(body);
-    
     // Handle both array and single object formats
-    const events = Array.isArray(parsedBody) ? parsedBody : [parsedBody];
-    
+    const events = Array.isArray(parsedBody) ? parsedBody : [
+      parsedBody
+    ];
     if (events.length === 0) {
-      return new Response('No events to process', { status: 400 });
+      return new Response('No events to process', {
+        status: 400
+      });
     }
-    
     // Process the first event (Lodgify typically sends one event per webhook)
     const event = events[0];
     // console.log("event", event);
     // console.log('Lodgify booking webhook received for host:', hostId, 'booking:', event.booking.id);
-    
     // Verify webhook signature using specific host's secret
     const signature = req.headers.get('ms-signature');
     if (signature) {
@@ -156,12 +144,7 @@ serve(async (req)=>{
 });
 async function extractClientFromHost(hostId) {
   try {
-    const { data: config } = await supabase
-      .from('lodgify_config')
-      .select('api_key')
-      .eq('host_id', hostId)
-      .single();
-    
+    const { data: config } = await supabase.from('lodgify_config').select('api_key').eq('host_id', hostId).single();
     return config?.api_key || null;
   } catch (error) {
     console.error('Error fetching API key for host:', hostId, error);
@@ -172,6 +155,21 @@ async function handleBookingChange(event, clientApiKey, hostId) {
   const { booking, guest } = event;
   // console.log("booking", booking);
   // console.log("guest", guest);
+
+
+  // Find the property in our database using Lodgify property_id
+  const { data: property, error: propertyError } = await supabase
+    .from('properties')
+    .select('id, name, host_id')
+    .eq('lodgify_property_id', booking.property_id)
+    .single()
+
+  if (propertyError || !property) {
+    console.error('Property not found for Lodgify property_id:', booking.property_id)
+    return { success: false, error: `Property not found for Lodgify property_id: ${booking.property_id}` }
+  }
+
+
   console.log(`Processing booking ${booking.id} with status: ${booking.status}`);
   try {
     // Check if conversation already exists
@@ -187,25 +185,24 @@ async function handleBookingChange(event, clientApiKey, hostId) {
     // Clean phone number
     const cleanPhone = guest?.phone_number?.replace(/[^+\d]/g, '');
     // Create new conversation with enhanced booking details
-    // Use verified host_id instead of property_id since properties aren't stored
     const { data: conversation, error: conversationError } = await supabase.from('conversations').insert({
-      host_id: hostId, // Use the verified host from webhook signature
+      property_id: property.id,
+      host_id: hostId,
       guest_name: guest?.name,
       guest_phone: cleanPhone,
       guest_email: guest?.email,
       check_in_date: booking?.date_arrival?.split('T')[0],
       check_out_date: booking?.date_departure?.split('T')[0],
       status: 'active',
+      property: [{
+        id: property.id,
+        name: property.name,
+        host_id: property.host_id
+      }],
       lodgify_booking_id: booking?.id,
       lodgify_thread_uid: null,
-      lodgify_property_id: booking?.property_id, // Store Lodgify property ID for reference
-      last_message_at: new Date().toISOString(),
-      booking_source: booking?.source,
-      booking_status: booking?.status,
-      total_amount: parseFloat(event?.booking_total_amount || '0'),
-      currency: event?.booking_currency_code || booking?.currency_code,
-      nights: booking?.nights,
-      guest_count: booking?.room_types?.reduce((total, room)=>total + room?.people, 0)
+      lodgify_property_id: booking?.property_id,
+      last_message_at: new Date().toISOString()
     }).select().single();
     if (conversationError) {
       console.error('Error creating conversation:', conversationError);
@@ -220,12 +217,12 @@ async function handleBookingChange(event, clientApiKey, hostId) {
       conversation_id: conversation.id,
       content: `Nouvelle réservation confirmée pour ${booking?.property_name} du ${booking?.date_arrival?.split('T')?.[0]} au ${booking.date_departure.split('T')[0]}. Invité: ${guest?.name}`,
       type: 'text',
-      direction: 'outbound', // Changed from 'system' to 'outbound' to match DB constraint
+      direction: 'outbound',
       status: 'delivered'
     });
     if (messageError) {
       console.error('Error creating welcome message:', messageError);
-    // Don't fail the whole process for message creation error
+      // Don't fail the whole process for message creation error
     }
     return {
       success: true,

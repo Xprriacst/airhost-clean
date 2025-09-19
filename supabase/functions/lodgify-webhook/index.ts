@@ -153,7 +153,7 @@ async function handleBookingChange(event: LodgifyBookingChangeEvent): Promise<{ 
     // Find the property in our database using Lodgify property_id
     const { data: property, error: propertyError } = await supabase
       .from('properties')
-      .select('id, host_id')
+      .select('id, name, host_id')
       .eq('lodgify_property_id', booking.property_id)
       .single()
 
@@ -182,6 +182,11 @@ async function handleBookingChange(event: LodgifyBookingChangeEvent): Promise<{ 
       .from('conversations')
       .insert({
         property_id: property.id,
+        property: [{
+          id: property.id,
+          name: property.name,
+          host_id: property.host_id
+        }],
         guest_name: guest.name,
         guest_phone: cleanPhone,
         check_in_date: booking.date_arrival.split('T')[0],

@@ -43,6 +43,7 @@ export async function updateProperty(property: Property): Promise<Property> {
       address: property.address,
       description: property.description,
       ai_instructions: property.ai_instructions,
+      lodgify_property_id: property.lodgify_property_id,
       amenities: property.amenities,
       rules: property.rules,
       faq: property.faq,
