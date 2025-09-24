@@ -13,6 +13,7 @@ import Settings from './pages/Settings';
 import Debug from './pages/Debug';
 import TestConversation from './pages/TestConversation';
 import EmergencyCases from './pages/EmergencyCases';
+import MultiDeviceTestPage from './pages/MultiDeviceTestPage';
 import NotificationTester from './components/NotificationTester';
 import Layout from './components/Layout/Layout';
 import { supabase } from './lib/supabase';
@@ -185,6 +186,7 @@ function App() {
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/debug" element={<Debug />} />
                   <Route path="/test-conversation" element={<TestConversation />} />
+                  <Route path="/test-multidevice" element={<MultiDeviceTestPage />} />
                 </Routes>
               </Layout>
             ) : (

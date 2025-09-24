@@ -1,325 +1,244 @@
-// Déclaration pour éviter les erreurs TypeScript avec Deno
-declare namespace Deno {
-  export interface Env {
-    get(key: string): string | undefined;
-  }
-  export const env: Env;
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import * as jose from 'https://deno.land/x/jose@v4.14.4/index.ts';
+// Charger la clé de service Firebase (stockée dans une variable d'environnement)
+function getFirebaseServiceAccount() {
+  // const json = Deno.env.get('FIREBASE_SERVICE_ACCOUNT_JSON')
+  // if (!json) {
+  //   throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON manquant')
+  // }
+  const json = {
+    "type": "service_account",
+    "project_id": "airhost-8948c",
+    "private_key_id": "4640146c7b64fcf4f894f7376760b9672d3d2891",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCxoADXz5BjZmwF\nveggiJ39/01TAeKp3H++xst3ARCQjWhG7RW9BhOcpqbVujU1Ga3n18tQ8GL5uJZt\nQqUuEiGjHl8ErVY46b1tuXbGNhHiesk1MlHBnczWn2YQVRqVNCGjfeovyc70SXEx\n51gkvn2IbwUhjZ7MgnoQi45gf1qYzMDG/eVlH6YIGwQ3vK0MdBO07aMI1+jfg5HM\nUpfz3MZY9Qp5CuLvZweQt9+g3WD35pXYvTpw4ov+LNsEZDvNc3J/Zgs4uQMzMYOb\nRK8F0ngpB2NEjc1EZYtxRugDjb/vER0RjiQFN+EvbS6ZwbHSMnaja4tVeLtJN90G\nK14kkeT/AgMBAAECggEABe8KbYCJmkh5o1d3bF7OqFrhrRGLDjxHfYq2kVXVGn8e\n1Kpm54GkdhSQeONXk7E1QLbSG/TBLwZzlVgnRyVj6kcWytk04CyEH34/8YSCOcal\nohlO5zZA+Yp++7IGyU/h2ncCXnD8xjxjLlTuz4tti3k/T/ejLmx4F3ASDuHc7O3G\njG6YhsYAVZqzn6APnqHxt23Ywn1ra/lkXH/kdPH9lN07LK8htXmd7KyAgdSFr1oT\n1xjt01GrveKXuth5bOZj7fXPyoEA7/hhZdVYp+YHDhbqgM1ZY77pgROxkzvfkAnK\nPOD1+uDb6Z9QQ1pXS+0PghoFZpy2FRZsXLv22D1HgQKBgQDcBR8mrRawrdKxGcWB\n/ND5idVIMeNauvLTtPgwM+v5Rca+zAaRTegpuBaU3xFjfLh+c1if5HewklS5hKJW\nrig+b4cmdYc1bV0v5/Qb69L9fEXzWfUwwJ0U2VoYMEFz06A2LUNrVgovxGzob1N7\nCbHIdeLRcRYMM1bhAAYbXJjgFwKBgQDOrBCt4G5nDigQbavMHD0ZEoNJBuA4OxOq\nYbD6XFdnjqR4Cpp9XrCr2AjVFgW7jAu69iQbJKRXQ4DKLbnpe5zNRyuNGwiNvKH2\n/QzGj7TEF/IC0GvD/LtgdLSv1Xef1v7Sx4ruzY9uthVBzOS0pbGLqhTKCE8dQfEH\ngPZhyG0LWQKBgDpBAOZ0nbVZ0Jcjg6/PCGWJoPbkfpXfObvkBnJ8zNXLK7wIuRRv\n1DB3lUMFbM0ykIaqc6SiES6nD9euzmy03+LoFJiSNaJnumyctX1PCyYiaULtZoXp\n+a0zfy84V5wbRCgUA+2/ciMDlvJTx36kKnYxAEUD9Bp23WHlZ7iG49MxAoGAQRxW\nWOE3BwKfvqU+lZxj5008zTn8U9rQ1EHYxtdmtfpreGImz86QLGNwTOmWPsLdQzae\no2qE1/UtUwTa6GMIQGfmoZrdtAG0qSKJ7tiBY7IDjb1p5iHuSnIaJrdC67mJKJCz\nBY7/XCrDQaqydvMon06jJA9AFYCb1fhcJuxE5mkCgYA/lCi/LnmlKXvs1lmiDNVi\nJNTFPcmk/AvNzX0G6T9CMZHpF1y+1+tndAfIPZUtwHF3aJVQfoDniGaCzboPm7Yl\nXbgSc9Zv0K3sQUVKW6t8/d3vLiXxbSBqkbqdu6jehfhd+8K7KbPteho+Aipy5bXX\nKyLLN6Zahm2igj8cOCqgTw==\n-----END PRIVATE KEY-----\n",
+    "client_email": "firebase-adminsdk-fbsvc@airhost-8948c.iam.gserviceaccount.com",
+    "client_id": "110181023496659114885",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40airhost-8948c.iam.gserviceaccount.com",
+    "universe_domain": "googleapis.com"
+  };
+  return json;
+// return JSON.parse(json)
 }
-
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-interface PushNotificationPayload {
-  to: string
-  notification: {
-    title: string
-    body: string
+// Générer un jeton d'accès OAuth2 pour FCM HTTP v1
+async function getAccessToken() {
+  const serviceAccount = getFirebaseServiceAccount();
+  const now = Math.floor(Date.now() / 1000);
+  const payload = {
+    iss: serviceAccount.client_email,
+    sub: serviceAccount.client_email,
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now,
+    exp: now + 3600,
+    scope: 'https://www.googleapis.com/auth/firebase.messaging'
+  };
+  // Signer le JWT avec la clé privée
+  const privateKey = serviceAccount.private_key;
+  const alg = 'RS256';
+  const jwt = await new jose.SignJWT(payload).setProtectedHeader({
+    alg,
+    typ: 'JWT'
+  }).sign(await jose.importPKCS8(privateKey, alg));
+  // Échanger le JWT contre un access token
+  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion: jwt
+    })
+  });
+  if (!tokenRes.ok) {
+    throw new Error(`Erreur OAuth2: ${tokenRes.status} ${await tokenRes.text()}`);
   }
-  data?: Record<string, string>
+  const data = await tokenRes.json();
+  return data.access_token;
 }
-
-// Fonction auxiliaire pour obtenir la clé serveur FCM
-function getFCMServerKey(): string | null {
-  const fcmServerKey = Deno.env.get('FCM_SERVER_KEY')
-  
-  if (!fcmServerKey) {
-    console.error('Variable d\'environnement FCM_SERVER_KEY manquante')
-    return null
-  }
-  
-  return fcmServerKey
-}
-
-// Fonction pour récupérer les informations de configuration Firebase publiques
+// Fonction pour récupérer la config Firebase publique
 function getFirebasePublicConfig() {
-  const apiKey = Deno.env.get('FIREBASE_API_KEY') || ''
-  const authDomain = "airhost-d9c48.firebaseapp.com"
-  const projectId = Deno.env.get('FCM_PROJECT_ID') || ''
-  const storageBucket = "airhost-d9c48.appspot.com"
-  const messagingSenderId = "107044522957"
-  const appId = "1:107044522957:web:ad4e9a0c48dc18cd2bb18e"
-  
   return {
-    apiKey,
-    authDomain,
-    projectId,
-    storageBucket,
-    messagingSenderId,
-    appId
-  }
+    apiKey: Deno.env.get('FIREBASE_API_KEY') || 'AIzaSyDoOMmWKWVymgehWi6FLoNqlAxzY_5Beus',
+    authDomain: `${Deno.env.get('FCM_PROJECT_ID') || "airhost-8948c"}.firebaseapp.com`,
+    projectId: Deno.env.get('FCM_PROJECT_ID') || 'airhost-8948c',
+    storageBucket: `${Deno.env.get('FCM_PROJECT_ID') || "airhost-8948c"}.appspot.com`,
+    messagingSenderId: Deno.env.get('FCM_SENDER_ID') || '755275743688',
+    appId: Deno.env.get('FIREBASE_APP_ID') || '1:755275743688:web:76e431cfa3065e645ec0fd'
+  };
 }
-
-// URL de l'API FCM
-const FCM_API_URL = 'https://fcm.googleapis.com/fcm/send'
-
-serve(async (req) => {
-  console.log('=== DÉBUT TRAITEMENT FCM-PROXY ===');
-  console.log('URL:', req.url);
-  console.log('Méthode:', req.method);
-  
-  // Gérer les requêtes préflight OPTIONS pour CORS
+serve(async (req)=>{
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Max-Age': '86400'
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PUT, DELETE',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-info, apikey, X-Supabase-Auth',
+        'Access-Control-Allow-Credentials': 'true'
       }
-    })
+    });
   }
-  
-  // Endpoint pour récupérer la configuration Firebase (accessible publiquement)
   if (req.method === 'GET' && new URL(req.url).pathname.endsWith('/config')) {
-    const config = getFirebasePublicConfig()
-    return new Response(JSON.stringify({ config }), {
+    const config = getFirebasePublicConfig();
+    return new Response(JSON.stringify({
+      config
+    }), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       }
-    })
+    });
   }
-
-  // Vérification de la méthode
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Méthode non autorisée' }), {
+    return new Response(JSON.stringify({
+      error: 'Méthode non autorisée'
+    }), {
       status: 405,
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       }
-    })
+    });
   }
-
   try {
-    // Création du client Supabase
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
-    // Récupération du token JWT de la requête
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      throw new Error('Non authentifié')
-    }
-
-    // Vérification du token JWT
-    const token = authHeader.replace('Bearer ', '')
-    
-    // Vérifier si c'est la clé de service
-    const isServiceKey = token === Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-    
+    const supabaseClient = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) throw new Error('Non authentifié');
+    const token = authHeader.replace('Bearer ', '');
+    const isServiceKey = token === Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     if (!isServiceKey) {
-      // Si ce n'est pas la clé de service, vérifier l'utilisateur
-      const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
-      
-      if (authError || !user) {
-        throw new Error('Token invalide')
-      }
-    }
-
-    // Récupération du payload
-    const requestBody = await req.text();
-    console.log('[FCM-PROXY DEBUG] Payload brut reçu:', requestBody);
-    
-    const payload: PushNotificationPayload = JSON.parse(requestBody);
-    console.log('[FCM-PROXY DEBUG] Payload parsé:', JSON.stringify(payload, null, 2));
-    console.log('[FCM-PROXY DEBUG] Données du message:', JSON.stringify(payload.data || {}, null, 2));
-
-    // VÉRIFICATION RENFORCÉE: ne jamais envoyer de notification pour les messages sortants
-    if (payload.data) {
-      console.log('[FCM-PROXY DEBUG] Vérification des attributs du message:');
-      console.log('- direction:', payload.data.direction);
-      console.log('- isOutbound:', payload.data.isOutbound);
-      console.log('- type:', payload.data.type);
-      
-      // Vérification 1: direction explicite
-      if (payload.data.direction === 'outbound') {
-        console.log('[FCM-PROXY DEBUG] Message sortant détecté (direction=outbound), annulation de notification');
-        return new Response(JSON.stringify({
-          success: true,
-          filtered: true,
-          reason: 'outbound_message'
-        }), {
-          status: 200,
-          headers: { 
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
-          }
-        });
-      }
-      
-      // Vérification 2: flag isOutbound
-      if (payload.data.isOutbound === 'true') {
-        console.log('[FCM-PROXY DEBUG] Message sortant détecté (isOutbound=true), annulation de notification');
-        return new Response(JSON.stringify({
-          success: true,
-          filtered: true,
-          reason: 'outbound_message'
-        }), {
-          status: 200,
-          headers: { 
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
-          }
-        });
-      }
-      
-      // Vérification 3: vérifier si c'est un message envoyé par l'utilisateur actuel
-      if (payload.data.sender_id && !isServiceKey) {
-        try {
-          // Récupérer les informations de l'utilisateur
-          const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
-          
-          if (!authError && user && payload.data.sender_id === user.id) {
-            console.log('[FCM-PROXY DEBUG] Message envoyé par l\'utilisateur actuel, annulation de notification');
-            return new Response(JSON.stringify({
-              success: true,
-              filtered: true,
-              reason: 'self_message'
-            }), {
-              status: 200,
-              headers: { 
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-              }
-            });
-          }
-        } catch (e) {
-          console.error('[FCM-PROXY DEBUG] Erreur lors de la vérification de l\'expéditeur:', e);
-          // En cas d'erreur, on continue pour ne pas bloquer les notifications légitimes
-        }
-      }
-    }
-
-    // Vérification que le token FCM appartient bien à l'utilisateur
-    if (!isServiceKey) {
-      // Récupérer les informations de l'utilisateur
       const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
-      
-      const { data: subscription, error: dbError } = await supabaseClient
-        .from('push_subscriptions')
-        .select('token')
-        .eq('user_id', user.id)
-        .eq('token', payload.to)
-        .single()
-
-      if (dbError || !subscription) {
-        // Autoriser les tokens de test et les tokens qui commencent par 'mock-fcm-token'
-        if (payload.to !== 'test-fcm-token' && !payload.to.startsWith('mock-fcm-token')) {
-          console.warn(`Token FCM non trouvé dans la base de données: ${payload.to.substring(0, 10)}... pour l'utilisateur ${user.id}`)
-          
-          // Tentative d'auto-correction : enregistrer automatiquement ce token
-          try {
-            await supabaseClient
-              .from('push_subscriptions')
-              .upsert({
-                user_id: user.id,
-                token: payload.to,
-                platform: 'fcm',
-                subscription: {},
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              });
-            console.log(`Token FCM auto-enregistré pour l'utilisateur ${user.id}`)
-          } catch (regError) {
-            console.error(`Échec de l'auto-enregistrement du token:`, regError)
-            // Continue malgré l'erreur d'enregistrement
-          }
-          
-          // Ne pas bloquer l'envoi même si le token n'est pas enregistré
-          // Cela permet à l'application de fonctionner même si l'enregistrement échoue
-        }
-      }
+      if (authError || !user) throw new Error('Token invalide');
     }
-
-    // Cas spécial pour le token de test
-    if (payload.to === 'test-fcm-token') {
-      console.log('Token de test détecté, simulation de réponse réussie')
+    const body = await req.json();
+    const payload = body;
+    // Handle both 'to' and 'fcmToken' field names for backward compatibility
+    const fcmToken = payload.to || payload.fcmToken;
+    // Handle test token
+    if (fcmToken === 'test-fcm-token') {
+      console.log('Token de test détecté, simulation de réponse réussie');
       return new Response(JSON.stringify({
         success: true,
-        messageId: "test-message-id-"+Date.now()
+        messageId: "test-message-id-" + Date.now()
       }), {
         status: 200,
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*'
         }
-      })
+      });
     }
-
-    // Vérifier que la clé serveur FCM est disponible
-    const serverKey = getFCMServerKey()
-    if (!serverKey) {
-      throw new Error('Clé serveur FCM manquante')
+    // Validate that we have a valid FCM token
+    if (!fcmToken || fcmToken.trim() === '') {
+      console.error('FCM Error: No FCM token provided in payload.to or payload.fcmToken');
+      console.error('Payload received:', JSON.stringify(payload, null, 2));
+      throw new Error('FCM token is required but not provided');
     }
-    
-    // Préparer le message pour l'API FCM HTTP v1
-    const fcmMessage = {
-      to: payload.to,
-      notification: payload.notification,
-      data: payload.data || {},
-      priority: 'high',
-      content_available: true,
-      mutable_content: true,
-      android: {
-        priority: 'high',
-        notification: {
-          sound: 'default',
-          channel_id: 'default-channel',
-          priority: 'high'
-        }
-      },
-      apns: {
-        payload: {
-          aps: {
-            sound: 'default',
-            badge: 1,
-            content_available: 1,
-            mutable_content: 1
-          }
-        }
+    // Validate FCM token format (FCM tokens are typically 152+ characters long and contain specific patterns)
+    const fcmTokenPattern = /^[A-Za-z0-9_-]+:[A-Za-z0-9_-]+$/;
+    const isValidLength = fcmToken.length >= 140 // FCM tokens are usually 152+ chars
+    ;
+    const hasValidFormat = fcmTokenPattern.test(fcmToken) || fcmToken.startsWith('f') // New format or legacy format
+    ;
+    if (!isValidLength && fcmToken !== 'test-fcm-token') {
+      console.error('FCM Error: Token appears to be too short:', fcmToken.length, 'characters');
+      console.error('Token preview:', fcmToken.substring(0, 50) + '...');
+      throw new Error(`Invalid FCM token format: token is too short (${fcmToken.length} chars, expected 140+)`);
+    }
+    console.log('FCM Token length:', fcmToken.length);
+    console.log('FCM Token preview:', fcmToken.substring(0, 50) + '...');
+    console.log('Full payload:', JSON.stringify(payload, null, 2));
+    const accessToken = await getAccessToken();
+    const projectId = getFirebaseServiceAccount().project_id;
+    // Prepare notification object (remove unsupported fields like 'icon')
+    const notification = {
+      ...payload.notification
+    };
+    delete notification.icon // FCM v1 doesn't support icon in notification
+    ;
+    // Convert all data values to strings (FCM v1 requirement)
+    const data = {};
+    if (payload.data) {
+      for (const [key, value] of Object.entries(payload.data)){
+        data[key] = String(value);
       }
     }
-    
-    console.log('[FCM-PROXY DEBUG] Envoi de notification FCM:', JSON.stringify(fcmMessage, null, 2));
-    
-    // Envoi du message à l'API FCM
-    const response = await fetch(FCM_API_URL, {
+    const fcmMessage = {
+      message: {
+        token: fcmToken,
+        // Top-level data for all platforms to access programmatically
+        data: data
+      }
+    };
+    // const fcmMessage = {
+    //   message: {
+    //     token: fcmToken,
+    //     notification,
+    //     data,
+    //     android: {
+    //       notification: {
+    //         icon: payload.notification?.icon || '/logo192.png',
+    //         sound: 'default',
+    //         channel_id: 'default-channel'
+    //       }
+    //     },
+    //     apns: {
+    //       payload: {
+    //         aps: {
+    //           sound: 'default',
+    //           badge: 1
+    //         }
+    //       }
+    //     }
+    //   }
+    // };
+    const res = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `key=${serverKey}`
+        'Authorization': `Bearer ${accessToken}`
       },
       body: JSON.stringify(fcmMessage)
-    })
-    
-    // Récupération de la réponse
-    const responseData = await response.json()
-    
-    console.log('[FCM-PROXY DEBUG] Réponse FCM:', JSON.stringify(responseData, null, 2));
-    console.log('=== FIN TRAITEMENT FCM-PROXY ===');
-    
-    // Retour de la réponse
-    return new Response(JSON.stringify(responseData), {
-      status: response.status,
-      headers: { 
+    });
+    const resData = await res.json();
+    if (!res.ok) {
+      console.error('FCM API Error Response:', JSON.stringify(resData, null, 2));
+      // Handle specific FCM errors with helpful messages
+      if (resData.error?.message?.includes('not a valid FCM registration token')) {
+        throw new Error(`Invalid FCM Token: The token "${fcmToken.substring(0, 20)}..." is not valid. This usually means:
+1. The token has expired
+2. The app was uninstalled/reinstalled  
+3. The user needs to refresh their FCM token
+4. The token format is incorrect
+Please regenerate the FCM token.`);
+      }
+      if (resData.error?.message?.includes('Recipient of the message is not set')) {
+        throw new Error('FCM Error: No recipient token provided. Please ensure fcmToken or to field is set.');
+      }
+      throw new Error(`FCM v1 Error: ${res.status} - ${JSON.stringify(resData)}`);
+    }
+    return new Response(JSON.stringify(resData), {
+      status: 200,
+      headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       }
-    })
-  } catch (error) {
-    console.error("Erreur:", error.message)
-    console.log('=== FIN TRAITEMENT FCM-PROXY AVEC ERREUR ===');
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: error.message === 'Non authentifié' ? 401 : 500,
-      headers: { 
+    });
+  } catch (err) {
+    console.error('Erreur:', err.message);
+    return new Response(JSON.stringify({
+      error: err.message
+    }), {
+      status: 500,
+      headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       }
-    })
+    });
   }
-})
+});
