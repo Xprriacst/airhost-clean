@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { getDeviceInfo } from '../utils/device-fingerprint';
 
 // Nous utilisons directement l'interface PushSubscription native du navigateur
 
@@ -240,12 +241,19 @@ export class NotificationService {
       console.log('[NOTIF DEBUG] Données d\'abonnement à enregistrer:', 
         JSON.stringify(subscriptionObj).substring(0, 100) + '...');
       
+      // Get device information for multi-device support
+      const deviceInfo = getDeviceInfo();
+      
       // Utiliser upsert avec un objet JavaScript qui sera converti en JSONB
       const { error, data: upsertResult } = await supabase
         .from('push_subscriptions')
         .upsert({
           user_id: user.id,
           subscription: subscriptionObj,
+          device_id: deviceInfo.deviceId,
+          device_name: deviceInfo.deviceName,
+          device_info: deviceInfo.deviceInfo,
+          platform: 'web',
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'user_id'

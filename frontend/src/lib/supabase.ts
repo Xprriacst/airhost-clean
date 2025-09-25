@@ -18,8 +18,8 @@ console.log('Toutes les variables d\'environnement:');
 console.log(import.meta.env);
 
 // Définir des valeurs par défaut pour la production
-const defaultSupabaseUrl = 'https://ndeydubfkutridvnzixc.supabase.co';
-const defaultSupabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kZXlkdWJma3V0cmlkdm56aXhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDg1MzI0NjcsImV4cCI6MjAyNDEwODQ2N30.VvVzBJLNfBjJGGnJVHOKqXGMKfqhNQjWZhZcPqKqKqY';
+const defaultSupabaseUrl = 'https://whxkhrtlccxubvjgexmi.supabase.co';
+const defaultSupabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndoeGtocnRsY2N4dWJ2amdleG1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc2MzQ4MDAsImV4cCI6MjA1MzIxMDgwMH0.placeholder-key-needs-to-be-updated';
 
 // Déterminer les valeurs à utiliser selon l'environnement
 let supabaseUrl: string;

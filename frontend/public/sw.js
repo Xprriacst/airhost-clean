@@ -4,15 +4,25 @@ importScripts('https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/9.6.10/firebase-messaging-compat.js');
 
 // Configuration Firebase - Paramètres publiques uniquement
+// const firebaseConfig = {
+//   apiKey: "AIzaSyC1ew_x6gQvsTdnJ-gTqVot2XPCa2qKXX0",
+//   authDomain: "airhost-d9c48.firebaseapp.com",
+//   projectId: "airhost-supabase", // ID correct du projet selon la console Firebase
+//   storageBucket: "airhost-d9c48.appspot.com",
+//   messagingSenderId: "107044522957",
+//   appId: "1:107044522957:web:ad4e9a0c48dc18cd2bb18e",
+//   // Ajout de la clé VAPID pour améliorer la compatibilité
+//   vapidKey: "BCeZrB7xYF6LkY0vq4NEG3AZaHaKHn2RrzzM5WYtBsQpdYkLQs0tkjx-hcN6XlmNNPt4cKpbLJEi6TP_Qqt7Jck"
+// };
+
 const firebaseConfig = {
-  apiKey: "AIzaSyC1ew_x6gQvsTdnJ-gTqVot2XPCa2qKXX0",
-  authDomain: "airhost-d9c48.firebaseapp.com",
-  projectId: "airhost-supabase", // ID correct du projet selon la console Firebase
-  storageBucket: "airhost-d9c48.appspot.com",
-  messagingSenderId: "107044522957",
-  appId: "1:107044522957:web:ad4e9a0c48dc18cd2bb18e",
-  // Ajout de la clé VAPID pour améliorer la compatibilité
-  vapidKey: "BCeZrB7xYF6LkY0vq4NEG3AZaHaKHn2RrzzM5WYtBsQpdYkLQs0tkjx-hcN6XlmNNPt4cKpbLJEi6TP_Qqt7Jck"
+  apiKey: "AIzaSyDoOMmWKWVymgehWi6FLoNqlAxzY_5Beus",
+  authDomain: "airhost-8948c.firebaseapp.com",
+  projectId: "airhost-8948c",
+  storageBucket: "airhost-8948c.firebasestorage.app",
+  messagingSenderId: "755275743688",
+  appId: "1:755275743688:web:76e431cfa3065e645ec0fd",
+  measurementId: "G-0Y3WQJW7XW"
 };
 
 // Variables d'état du Service Worker
@@ -59,63 +69,63 @@ self.addEventListener('activate', (event) => {
 console.log('[SW DEBUG] Service Worker chargé et en attente d\'événements');
 
 // Gestion des notifications push WebPush classiques
-self.addEventListener('push', (event) => {
-  // Ajouter des logs spécifiques pour le débogage mobile
-  console.log('[SW DEBUG] Notification push reçue', event);
-  console.log('[SW MOBILE] UserAgent:', self.navigator ? self.navigator.userAgent : 'non disponible');
-  console.log('[SW MOBILE] Est un appareil mobile:', detectMobileDevice());
+// self.addEventListener('push', (event) => {
+//   // Ajouter des logs spécifiques pour le débogage mobile
+//   console.log('[SW DEBUG] Notification push reçue', event);
+//   console.log('[SW MOBILE] UserAgent:', self.navigator ? self.navigator.userAgent : 'non disponible');
+//   console.log('[SW MOBILE] Est un appareil mobile:', detectMobileDevice());
 
-  if (!event.data) {
-    console.log('[SW DEBUG] Aucune donnée reçue');
-    return;
-  }
+//   if (!event.data) {
+//     console.log('[SW DEBUG] Aucune donnée reçue');
+//     return;
+//   }
 
-  try {
-    const data = event.data.json();
-    // Mettre à jour la détection mobile
-    isMobileDevice = detectMobileDevice();
-    console.log('[SW DEBUG] Données de notification reçues:', data);
+//   try {
+//     const data = event.data.json();
+//     // Mettre à jour la détection mobile
+//     isMobileDevice = detectMobileDevice();
+//     console.log('[SW DEBUG] Données de notification reçues:', data);
 
-    const options = {
-      body: data.body || 'Nouveau message reçu',
-      icon: '/icons/icon-192x192.png',
-      badge: '/icons/icon-72x72.png',
-      data: {
-        url: data.url || '/chat',
-        conversationId: data.conversationId
-      },
-      actions: [
-        {
-          action: 'open',
-          title: 'Ouvrir'
-        },
-        {
-          action: 'close',
-          title: 'Fermer'
-        }
-      ],
-      vibrate: [100, 50, 100],
-      timestamp: data.timestamp || Date.now()
-    };
+//     const options = {
+//       body: data.body || 'Nouveau message reçu',
+//       icon: '/icons/icon-192x192.png',
+//       badge: '/icons/icon-72x72.png',
+//       data: {
+//         url: data.url || '/chat',
+//         conversationId: data.conversationId
+//       },
+//       actions: [
+//         {
+//           action: 'open',
+//           title: 'Ouvrir'
+//         },
+//         {
+//           action: 'close',
+//           title: 'Fermer'
+//         }
+//       ],
+//       vibrate: [100, 50, 100],
+//       timestamp: data.timestamp || Date.now()
+//     };
 
-    console.log('[SW DEBUG] Tentative d\'affichage de notification avec:', {
-      title: data.title || 'Airhost',
-      options
-    });
+//     console.log('[SW DEBUG] Tentative d\'affichage de notification avec:', {
+//       title: data.title || 'Airhost',
+//       options
+//     });
     
-    const notificationPromise = self.registration.showNotification(data.title || 'Airhost', options);
+//     const notificationPromise = self.registration.showNotification(data.title || 'Airhost', options);
     
-    notificationPromise.then(() => {
-      console.log('[SW DEBUG] Notification affichée avec succès');
-    }).catch(err => {
-      console.error('[SW DEBUG] Erreur lors de l\'affichage de la notification:', err);
-    });
+//     notificationPromise.then(() => {
+//       console.log('[SW DEBUG] Notification affichée avec succès');
+//     }).catch(err => {
+//       console.error('[SW DEBUG] Erreur lors de l\'affichage de la notification:', err);
+//     });
     
-    event.waitUntil(notificationPromise);
-  } catch (error) {
-    console.error('[SW DEBUG] Erreur lors du traitement de la notification push:', error);
-  }
-});
+//     event.waitUntil(notificationPromise);
+//   } catch (error) {
+//     console.error('[SW DEBUG] Erreur lors du traitement de la notification push:', error);
+//   }
+// });
 
 // Gestion des clics sur les notifications
 self.addEventListener('notificationclick', (event) => {
@@ -158,11 +168,23 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // Gestionnaire de messages Firebase en arrière-plan (format mobile)
-messaging.onBackgroundMessage((payload) => {
+messaging.onBackgroundMessage(async (payload) => {
   // Ne pas afficher de notification pour les messages sortants
   if (payload.data && (payload.data.direction === 'outbound' || payload.data.isOutbound === 'true')) {
     console.log('[SW DEBUG] Message sortant détecté, pas de notification');
     return;
+  }
+
+  // Check if the user is already active on the site
+  const clients = await self.clients.matchAll({
+    type: 'window',
+    includeUncontrolled: true
+  });
+
+  // If any window client is focused, don't show the notification
+  if (clients.some(client => client.focused)) {
+    console.log('[SW DEBUG] Application is in focus, suppressing notification.');
+    return; 
   }
   console.log('[SW DEBUG] Message FCM en arrière-plan reçu', payload);
   console.log('[SW MOBILE] Message en arrière-plan détecté sur appareil mobile:', detectMobileDevice());
@@ -205,6 +227,7 @@ messaging.onBackgroundMessage((payload) => {
         requireInteraction: isMobileDevice,
         // Forcer l'affichage sur mobile même en mode silencieux
         silent: false,
+        tag: payload.data.conversationId,
         data: {
           url: payload.data.url || '/chat',
           conversationId: payload.data.conversationId,

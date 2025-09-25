@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Alert, Box, Typography, Paper, CircularProgress, Chip } from '@mui/material';
 import { MobileNotificationService } from '../services/notification/mobile-notification.service';
-import { requestFCMPermission } from '../lib/firebase';
+import { requestFCMPermission, refreshFCMToken } from '../lib/firebase';
 import { supabase } from '../lib/supabase';
 
 /**
@@ -15,6 +15,9 @@ const NotificationTester: React.FC = () => {
   const [token, setToken] = useState<string | null>(null);
   const [dbToken, setDbToken] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
+  const [forceRealToken, setForceRealToken] = useState<boolean>(
+    localStorage.getItem('forceRealToken') === 'true'
+  );
 
   // Charger les données initiales
   useEffect(() => {
@@ -89,6 +92,53 @@ const NotificationTester: React.FC = () => {
     }
   };
 
+  // Refresh FCM token (useful when token becomes invalid)
+  const handleRefreshToken = async () => {
+    setLoading(true);
+    setError(null);
+    setStatus('Refreshing FCM token...');
+    
+    try {
+      const newToken = await refreshFCMToken();
+      if (newToken) {
+        setToken(newToken);
+        setStatus('New FCM token obtained successfully');
+        
+        // Register the new token
+        await MobileNotificationService.registerToken(newToken);
+        setStatus('New token registered successfully');
+        
+        // Update the database token display
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser) {
+          const { data } = await supabase
+            .from('push_subscriptions')
+            .select('token')
+            .eq('user_id', currentUser.id)
+            .single();
+            
+          if (data) {
+            setDbToken(data.token);
+          }
+        }
+      } else {
+        setError('Failed to refresh FCM token');
+      }
+    } catch (err: any) {
+      setError(`Error refreshing token: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Toggle force real token mode
+  const toggleForceRealToken = () => {
+    const newValue = !forceRealToken;
+    setForceRealToken(newValue);
+    localStorage.setItem('forceRealToken', newValue.toString());
+    setStatus(`Force real token mode: ${newValue ? 'ENABLED' : 'DISABLED'}. Refresh tokens to apply.`);
+  };
+
   // Tester l'envoi d'une notification
   const testNotification = async () => {
     setLoading(true);
@@ -101,7 +151,7 @@ const NotificationTester: React.FC = () => {
       
       // Créer le payload de la notification
       const payload = {
-        to: targetToken,
+        fcmToken: targetToken,
         notification: {
           title: 'Test de notification',
           body: `Test envoyé à ${new Date().toLocaleTimeString()}`,
@@ -113,32 +163,14 @@ const NotificationTester: React.FC = () => {
         }
       };
       
-      // Récupérer le token d'authentification
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Utilisateur non authentifié');
-      }
-      
-      // Déterminer l'URL de l'Edge Function dynamiquement
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://tornfqtvnzkgnwfudxdb.supabase.co';
-      const fcmProxyUrl = `${supabaseUrl}/functions/v1/fcm-proxy`;
-      
-      // Envoyer la requête à l'Edge Function
-      const response = await fetch(fcmProxyUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify(payload)
+      // Utiliser supabase.functions.invoke pour appeler l'Edge Function
+      const { data: result, error: functionError } = await supabase.functions.invoke('fcm-proxy', {
+        body: payload
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Erreur ${response.status}: ${errorData.error || 'Erreur inconnue'}`);
+      if (functionError) {
+        throw new Error(`Erreur de fonction: ${functionError.message}`);
       }
-      
-      const result = await response.json();
       setStatus(`Notification envoyée avec succès: ${result.success ? 'OK' : 'Échec'}`);
     } catch (err: any) {
       setError(`Erreur: ${err.message}`);
@@ -177,6 +209,14 @@ const NotificationTester: React.FC = () => {
             label={token && dbToken && token === dbToken ? 'Tokens synchronisés' : 'Tokens non synchronisés'} 
             color={token && dbToken && token === dbToken ? 'success' : 'warning'} 
           />
+          <Chip 
+            label={token && token.startsWith('mock-') ? 'Token: Mock' : token ? 'Token: Real' : 'Token: None'} 
+            color={token && token.startsWith('mock-') ? 'warning' : token ? 'success' : 'error'} 
+          />
+          <Chip 
+            label={`Force Real Token: ${forceRealToken ? 'ON' : 'OFF'}`} 
+            color={forceRealToken ? 'info' : 'default'} 
+          />
         </Box>
       </Box>
       
@@ -189,7 +229,10 @@ const NotificationTester: React.FC = () => {
             p: 1, 
             borderRadius: 1 
           }}>
-            {token.substring(0, 12) + '...' + token.substring(token.length - 12)}
+            {token && token.length > 24 
+              ? token.substring(0, 12) + '...' + token.substring(token.length - 12)
+              : token || 'Token non disponible'
+            }
           </Typography>
         </Box>
       )}
@@ -206,7 +249,7 @@ const NotificationTester: React.FC = () => {
         </Alert>
       )}
       
-      <Box sx={{ display: 'flex', gap: 2 }}>
+      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
         <Button 
           variant="contained" 
           onClick={requestPermission} 
@@ -214,6 +257,24 @@ const NotificationTester: React.FC = () => {
           color="primary"
         >
           {loading ? <CircularProgress size={24} /> : 'Demander les permissions'}
+        </Button>
+        
+        <Button 
+          variant="outlined" 
+          onClick={handleRefreshToken} 
+          disabled={loading || !token}
+          color="warning"
+        >
+          {loading ? <CircularProgress size={24} /> : 'Refresh Token'}
+        </Button>
+        
+        <Button 
+          variant="outlined" 
+          onClick={toggleForceRealToken} 
+          disabled={loading}
+          color={forceRealToken ? 'info' : 'default'}
+        >
+          {forceRealToken ? 'Disable' : 'Enable'} Real Token
         </Button>
         
         <Button 

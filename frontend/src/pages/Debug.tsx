@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { Box, Button, Container, Grid, Paper, TextField, Typography, CircularProgress, Divider, Tabs, Tab } from '@mui/material';
 import NotificationTest from '../components/NotificationTest';
 import LodgifyTestPanel from '../components/Chat/LodgifyTestPanel';
+import { FCMDebugger } from '../components/FCMDebugger';
+import { FCMPermissionFixer } from '../components/FCMPermissionFixer';
+import { testFCMProxy } from '../test-fcm-proxy';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -65,6 +68,11 @@ const DebugPage: React.FC = () => {
         case 'ai-response':
           url = '/.netlify/functions/test-ai-response';
           break;
+        case 'fcm-proxy':
+          // Special case for FCM proxy test - call the test function directly
+          await testFCMProxy();
+          setResult({ message: 'FCM Proxy test completed. Check browser console for detailed results.' });
+          return;
         default:
           throw new Error('Type de test inconnu');
       }
@@ -174,6 +182,17 @@ const DebugPage: React.FC = () => {
             >
               Test complet AI Response
             </Button>
+            
+            <Divider sx={{ my: 2 }} />
+            
+            <Button 
+              variant="contained" 
+              color="warning" 
+              onClick={() => runTest('fcm-proxy')}
+              sx={{ mt: 2 }}
+            >
+              Test FCM Proxy Function
+            </Button>
           </Paper>
         </Grid>
         
@@ -228,6 +247,8 @@ const DebugPage: React.FC = () => {
       <TabPanel value={tabValue} index={2}>
         <LodgifyTestPanel />
       </TabPanel>
+      <FCMDebugger />
+      {/* <FCMPermissionFixer /> */}
     </Container>
   );
 };

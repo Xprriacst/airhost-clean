@@ -16,14 +16,26 @@ class FirebaseNotificationService {
   private serviceWorkerRegistration: ServiceWorkerRegistration | null = null;
 
   // Configuration Firebase par défaut (sera remplacée par la configuration de l'Edge Function)
+  // private firebaseConfig = {
+  //   apiKey: "AIzaSyC1ew_x6gQvsTdnJ-gTqVot2XPCa2qKXX0",
+  //   authDomain: "airhost-d9c48.firebaseapp.com",
+  //   projectId: "airhost-supabase", // ID correct du projet selon la console Firebase
+  //   storageBucket: "airhost-d9c48.appspot.com",
+  //   messagingSenderId: "107044522957",
+  //   appId: "1:107044522957:web:ad4e9a0c48dc18cd2bb18e"
+  // };
+
   private firebaseConfig = {
-    apiKey: '',
-    authDomain: "airhost-d9c48.firebaseapp.com",
-    projectId: "airhost-supabase", // ID correct du projet selon la console Firebase
-    storageBucket: "airhost-d9c48.appspot.com",
-    messagingSenderId: "107044522957",
-    appId: "1:107044522957:web:ad4e9a0c48dc18cd2bb18e"
-  };
+  apiKey: "AIzaSyDoOMmWKWVymgehWi6FLoNqlAxzY_5Beus",
+  authDomain: "airhost-8948c.firebaseapp.com",
+  projectId: "airhost-8948c",
+  storageBucket: "airhost-8948c.firebasestorage.app",
+  messagingSenderId: "755275743688",
+  appId: "1:755275743688:web:76e431cfa3065e645ec0fd",
+  measurementId: "G-0Y3WQJW7XW"
+};
+
+
 
   private constructor() {
     // Constructeur privé pour garantir le singleton
@@ -64,7 +76,8 @@ class FirebaseNotificationService {
         // CORRECTION: S'assurer que le projectId est "airhost-supabase" (valeur correcte selon la console Firebase)
         this.firebaseConfig = {
           ...data.config,
-          projectId: "airhost-supabase" // Forcer la valeur correcte, quelle que soit celle renvoyée par l'Edge Function
+          projectId: "airhost-8948c",
+          // projectId: "airhost-supabase" // Forcer la valeur correcte, quelle que soit celle renvoyée par l'Edge Function
         };
         
         console.log('[FIREBASE DEBUG] ProjectId forcé à "airhost-supabase" pour correspondre au projet Firebase réel');
@@ -198,22 +211,38 @@ class FirebaseNotificationService {
       // Stratégie principale - Obtenir le token FCM avec VAPID key
       try {
         console.log('[FIREBASE DEBUG] Tentative d\'obtention du token avec VAPID key...');
+        console.log('[FIREBASE DEBUG] Configuration Firebase:', {
+          projectId: this.firebaseConfig.projectId,
+          messagingSenderId: this.firebaseConfig.messagingSenderId,
+                    vapidKey:"BFPfKnB-2v0jC0-CSjbBsizcS5rSU0jYCryFgffI5e51dogiesy3iEQyCtUlGxL-qOVEzXuYOkvv-ZAp-1D_9Ak",
+
+          // vapidKey: 'BCeZrB7xYF6LkY0vq4NEG3AZaHaKHn2RrzzM5WYtBsQpdYkLQs0tkjx-hcN6XlmNNPt4cKpbLJEi6TP_Qqt7Jck'
+        });
+        console.log('[FIREBASE DEBUG] Service Worker Registration:', registration);
+        console.log('[FIREBASE DEBUG] Messaging Instance:', this.messagingInstance);
+        
         const fcmToken = await getToken(this.messagingInstance, {
-          vapidKey: 'BCeZrB7xYF6LkY0vq4NEG3AZaHaKHn2RrzzM5WYtBsQpdYkLQs0tkjx-hcN6XlmNNPt4cKpbLJEi6TP_Qqt7Jck',
+          vapidKey:"BFPfKnB-2v0jC0-CSjbBsizcS5rSU0jYCryFgffI5e51dogiesy3iEQyCtUlGxL-qOVEzXuYOkvv-ZAp-1D_9Ak",
+          // vapidKey: 'BCeZrB7xYF6LkY0vq4NEG3AZaHaKHn2RrzzM5WYtBsQpdYkLQs0tkjx-hcN6XlmNNPt4cKpbLJEi6TP_Qqt7Jck',
           serviceWorkerRegistration: registration
         });
         
         if (fcmToken) {
           console.log('[FIREBASE DEBUG] Token FCM obtenu avec succès:', fcmToken);
+          console.log('[FIREBASE DEBUG] Token length:', fcmToken.length);
+          
+          // Store the token in localStorage
+          localStorage.setItem('fcm_token', fcmToken);
           
           // Notification au service worker que nous avons un token
           try {
             if (registration.active) {
               registration.active.postMessage({
                 type: 'FCM_TOKEN_RECEIVED',
-                token: fcmToken
+                token: fcmToken,
+                isMockToken: false
               });
-              console.log('[FIREBASE] Token envoyé au service worker');
+              console.log('[FIREBASE] Real token envoyé au service worker');
             }
           } catch (swError) {
             console.error('[FIREBASE] Erreur de communication avec le service worker:', swError);
@@ -225,8 +254,23 @@ class FirebaseNotificationService {
         }
       } catch (tokenError) {
         // Ne pas échouer immédiatement, mais essayer la stratégie de secours
-        console.warn('[FIREBASE DEBUG] Erreur avec la stratégie principale:', tokenError);
+        console.error('[FIREBASE DEBUG] Erreur détaillée avec la stratégie principale:', {
+          error: tokenError,
+          message: tokenError.message,
+          code: tokenError.code,
+          stack: tokenError.stack
+        });
         console.log('[FIREBASE DEBUG] Tentative avec la stratégie de secours...');
+      }
+      
+      // Check if we should force real token generation
+      const forceRealToken = new URLSearchParams(window.location.search).has('forceRealToken') || 
+                            localStorage.getItem('forceRealToken') === 'true';
+      
+      if (forceRealToken) {
+        console.log('[FIREBASE DEBUG] Force real token is enabled, skipping mock token fallback');
+        console.error('[FIREBASE DEBUG] Failed to obtain real FCM token, no fallback available');
+        return null;
       }
       
       // Stratégie de secours pour environnement de recette, développement et appareils mobiles
@@ -271,6 +315,28 @@ class FirebaseNotificationService {
     }
   }
   
+  /**
+   * Refresh the FCM token (useful when token becomes invalid)
+   */
+  public async refreshFCMToken(): Promise<string | null> {
+    console.log('[FIREBASE] Refreshing FCM token...');
+    
+    // Clear the old token from localStorage
+    localStorage.removeItem('fcm_token');
+    
+    // Request a new token
+    const newToken = await this.requestFCMPermission();
+    
+    if (newToken) {
+      console.log('[FIREBASE] New FCM token obtained:', newToken.substring(0, 20) + '...');
+      localStorage.setItem('fcm_token', newToken);
+    } else {
+      console.error('[FIREBASE] Failed to refresh FCM token');
+    }
+    
+    return newToken;
+  }
+
   /**
    * Configure la fonction de callback pour les messages FCM reçus
    */
@@ -463,6 +529,11 @@ export const requestFCMPermission = async (): Promise<string | null> => {
   return await firebaseNotificationService.requestFCMPermission();
 };
 
+export const refreshFCMToken = async (): Promise<string | null> => {
+  await firebaseNotificationService.initialize();
+  return firebaseNotificationService.refreshFCMToken();
+};
+
 
 
 /**
@@ -484,6 +555,7 @@ interface FirebaseMessagingInterface {
   notificationService: typeof firebaseNotificationService;
   // Méthodes exposées pour la compatibilité avec le code existant
   requestFCMPermission: typeof requestFCMPermission;
+  refreshFCMToken: typeof refreshFCMToken;
   setMessagingCallback: typeof setMessagingCallback;
   testFirebaseNotification: typeof testFirebaseNotification;
 }
@@ -651,6 +723,7 @@ initMobileSync();
 const firebaseMessaging: FirebaseMessagingInterface = {
   notificationService: firebaseNotificationService,
   requestFCMPermission,
+  refreshFCMToken,
   setMessagingCallback,
   testFirebaseNotification
 };

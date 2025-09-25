@@ -32,7 +32,9 @@ export const getSiteUrl = (): string => {
  */
 export const getRedirectUrl = (path: string = ''): string => {
   const baseUrl = getSiteUrl();
-  const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+  // Vérifier que path n'est pas null ou undefined avant d'utiliser startsWith
+  const safePath = path || '';
+  const cleanPath = safePath.startsWith('/') ? safePath.substring(1) : safePath;
   const redirectUrl = `${baseUrl}${cleanPath}`;
   
   // Log pour débogage
