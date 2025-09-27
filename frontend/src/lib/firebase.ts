@@ -252,7 +252,7 @@ class FirebaseNotificationService {
         } else {
           console.warn('[FIREBASE DEBUG] Token FCM null ou vide');
         }
-      } catch (tokenError) {
+      } catch (tokenError: any) {
         // Ne pas échouer immédiatement, mais essayer la stratégie de secours
         console.error('[FIREBASE DEBUG] Erreur détaillée avec la stratégie principale:', {
           error: tokenError,

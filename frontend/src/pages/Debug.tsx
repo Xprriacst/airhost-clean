@@ -3,7 +3,7 @@ import { Box, Button, Container, Grid, Paper, TextField, Typography, CircularPro
 import NotificationTest from '../components/NotificationTest';
 import LodgifyTestPanel from '../components/Chat/LodgifyTestPanel';
 import { FCMDebugger } from '../components/FCMDebugger';
-import { FCMPermissionFixer } from '../components/FCMPermissionFixer';
+// import { FCMPermissionFixer } from '../components/FCMPermissionFixer';
 import { testFCMProxy } from '../test-fcm-proxy';
 
 interface TabPanelProps {
