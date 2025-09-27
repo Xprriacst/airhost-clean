@@ -6,7 +6,7 @@
 import { supabase } from './lib/supabase';
 import { MobileNotificationService } from './services/notification/mobile-notification.service';
 import { DeviceCleanupService } from './services/device-cleanup.service';
-import { getDeviceInfo, clearDeviceData } from './utils/device-fingerprint';
+import { getDeviceInfo } from './utils/device-fingerprint';
 
 interface TestResult {
   testName: string;
@@ -155,10 +155,10 @@ class MultiDeviceFCMTester {
       }
 
       // Get initial device count
-      const { count: initialCount } = await supabase
-        .from('push_subscriptions')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', this.userId);
+      // const { count: initialCount } = await supabase
+      //   .from('push_subscriptions')
+      //   .select('*', { count: 'exact', head: true })
+      //   .eq('user_id', this.userId);
 
       // Initialize mobile notification service
       await MobileNotificationService.init();
@@ -167,10 +167,10 @@ class MultiDeviceFCMTester {
       await new Promise(resolve => setTimeout(resolve, 3000));
 
       // Check if a new device was registered
-      const { count: finalCount } = await supabase
-        .from('push_subscriptions')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', this.userId);
+      // const { count: finalCount } = await supabase
+      //   .from('push_subscriptions')
+      //   .select('*', { count: 'exact', head: true })
+      //   .eq('user_id', this.userId);
 
       const deviceInfo = getDeviceInfo();
       
@@ -329,10 +329,10 @@ class MultiDeviceFCMTester {
       }
 
       // Get device count before cleanup
-      const { count: beforeCount } = await supabase
-        .from('push_subscriptions')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', this.userId);
+      // const { count: beforeCount } = await supabase
+      //   .from('push_subscriptions')
+      //   .select('*', { count: 'exact', head: true })
+      //   .eq('user_id', this.userId);
 
       // Perform cleanup
       const cleanupStats = await DeviceCleanupService.forceCleanup(30);

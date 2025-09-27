@@ -272,7 +272,7 @@ const NotificationTester: React.FC = () => {
           variant="outlined" 
           onClick={toggleForceRealToken} 
           disabled={loading}
-          color={forceRealToken ? 'info' : 'default'}
+          // color={forceRealToken ? 'info' : 'default'}
         >
           {forceRealToken ? 'Disable' : 'Enable'} Real Token
         </Button>

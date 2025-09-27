@@ -64,7 +64,7 @@ async function testFCMProxy() {
       try {
         const responseJson = JSON.parse(responseText);
         console.log('Raw response JSON:', responseJson);
-      } catch (e) {
+      } catch (e: any) {
         console.log('Response is not valid JSON:', e.message);
       }
     } else {
